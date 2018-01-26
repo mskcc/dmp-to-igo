@@ -1,4 +1,4 @@
-package org.mkscc.igo.pi.dmp.domain;
+package org.mkscc.igo.pi.dmptoigo.dmp.domain;
 
 import com.opencsv.bean.CsvBindByPosition;
 
@@ -155,5 +155,24 @@ public class DmpFileEntry {
 
     public void setMinorAlleleContamination(String minorAlleleContamination) {
         this.minorAlleleContamination = minorAlleleContamination;
+    }
+
+    @Override
+    public String toString() {
+        return "DmpFileEntry{" +
+                "dmpSampleId='" + dmpSampleId + '\'' +
+                ", groupId='" + groupId + '\'' +
+                ", partCconsentStatus='" + partCconsentStatus + '\'' +
+                ", oncotreeCode='" + oncotreeCode + '\'' +
+                ", sampleType='" + sampleType + '\'' +
+                ", primarySite='" + primarySite + '\'' +
+                ", metastasisSite='" + metastasisSite + '\'' +
+                ", tissueType='" + tissueType + '\'' +
+                ", annonymizedProjectName='" + annonymizedProjectName + '\'' +
+                ", sampleCoverage='" + sampleCoverage + '\'' +
+                ", somaticCallingStatus='" + somaticCallingStatus + '\'' +
+                ", majorAlleleContamination='" + majorAlleleContamination + '\'' +
+                ", minorAlleleContamination='" + minorAlleleContamination + '\'' +
+                '}';
     }
 }

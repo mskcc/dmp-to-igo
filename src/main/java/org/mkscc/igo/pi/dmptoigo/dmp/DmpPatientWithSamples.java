@@ -1,11 +1,13 @@
-package org.mkscc.igo.pi.dmp;
+package org.mkscc.igo.pi.dmptoigo.dmp;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.mkscc.igo.pi.dmp.domain.DMPSample;
+import org.mkscc.igo.pi.dmptoigo.dmp.domain.DMPSample;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class DmpPatientWithSamples {
@@ -15,7 +17,7 @@ public class DmpPatientWithSamples {
     @JsonProperty("dmp_patient_id")
     private String dmpPatientId;
 
-    private List<DMPSample> samples = new ArrayList<>();
+    private Map<String, DMPSample> samples = new HashMap<>();
 
     public String getMrn() {
         return mrn;
@@ -33,11 +35,11 @@ public class DmpPatientWithSamples {
         this.dmpPatientId = dmpPatientId;
     }
 
-    public List<DMPSample> getSamples() {
+    public Map<String, DMPSample> getSamples() {
         return samples;
     }
 
-    public void setSamples(List<DMPSample> samples) {
+    public void setSamples(Map<String, DMPSample> samples) {
         this.samples = samples;
     }
 }

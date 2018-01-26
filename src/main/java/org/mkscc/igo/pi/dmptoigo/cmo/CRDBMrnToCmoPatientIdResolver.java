@@ -1,14 +1,17 @@
-package org.mkscc.igo.pi.cmo;
+package org.mkscc.igo.pi.dmptoigo.cmo;
 
-import org.apache.log4j.Logger;
-import org.mkscc.igo.pi.crdb.CRDBPatientInfo;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.mkscc.igo.pi.dmptoigo.crdb.CRDBPatientInfo;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
 @Component
 public class CRDBMrnToCmoPatientIdResolver implements MrnToCmoPatientIdResolver {
-    private static final Logger LOGGER = Logger.getLogger(CRDBMrnToCmoPatientIdResolver.class);
+    private static final Logger LOGGER = LogManager.getLogger(CRDBMrnToCmoPatientIdResolver.class);
 
     @Value("${crdb.service.url}")
     private String crdbServiceUrl;
@@ -25,9 +28,12 @@ public class CRDBMrnToCmoPatientIdResolver implements MrnToCmoPatientIdResolver 
     @Value("${crdb.sid}")
     private String sid;
 
+    @Autowired
+    @Qualifier("basicRestTemplate")
+    private RestTemplate restTemplate;
+
     @Override
     public String resolve(String mrn) {
-        RestTemplate restTemplate = new RestTemplate();
         CRDBPatientInfo crdbPatientInfo = restTemplate.getForObject(getUrl(mrn), CRDBPatientInfo.class);
 
         String patientId = crdbPatientInfo.getPatientId();

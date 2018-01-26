@@ -1,4 +1,4 @@
-package org.mkscc.igo.pi.crdb;
+package org.mkscc.igo.pi.dmptoigo.crdb;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
