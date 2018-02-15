@@ -24,19 +24,18 @@ public class DMPFileEntryToSampleConverterFactory {
     @Autowired
     private AnnonymizedRunId2RunIdRepository annonymizedRunId2RunIdRepository;
 
-    public DmpFileEntryToSampleConverter getConverter(DmpFileEntry dmpFileEntry, DMPSampleIdView
-            dmpSampleIdView) {
-        if (shouldCache(dmpFileEntry, dmpSampleIdView))
+    public DmpFileEntryToSampleConverter getConverter(DmpFileEntry dmpFileEntry) {
+        if (shouldCache(dmpFileEntry))
             return cachingDMPFileEntryToSampleConverter;
         return basicDMPFileEntryToSampleConverter;
     }
 
-    private boolean shouldCache(DmpFileEntry dmpFileEntry, DMPSampleIdView dmpSampleIdView) {
-        return isTumor(dmpSampleIdView.getTumorNormal()) && !valuesCached(dmpSampleIdView, dmpFileEntry);
+    private boolean shouldCache(DmpFileEntry dmpFileEntry) {
+        return isTumor(dmpFileEntry.getTumorNormal()) && !valuesCached(dmpFileEntry);
     }
 
-    private boolean valuesCached(DMPSampleIdView dmpSampleIdView, DmpFileEntry dmpFileEntry) {
-        return dmpPatientId2CMOPatientIdRepository.containsKey(dmpSampleIdView.getPatientId()) &&
+    private boolean valuesCached(DmpFileEntry dmpFileEntry) {
+        return dmpPatientId2CMOPatientIdRepository.containsKey(dmpFileEntry.getPatientId()) &&
                 annonymizedRunId2RunIdRepository
                         .containsKey(dmpFileEntry.getAnnonymizedProjectName());
     }

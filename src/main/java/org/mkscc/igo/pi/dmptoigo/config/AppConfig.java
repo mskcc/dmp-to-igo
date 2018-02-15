@@ -3,6 +3,7 @@ package org.mkscc.igo.pi.dmptoigo.config;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.client.ClientHttpRequestInterceptor;
 import org.springframework.http.client.InterceptingClientHttpRequestFactory;
@@ -14,6 +15,7 @@ import java.util.Collections;
 import java.util.List;
 
 @Configuration
+@ComponentScan(basePackages = "org.mskcc.igo.pi")
 public class AppConfig {
     @Value("${external.sample.rest.username}")
     private String externalSampleRestUsername;
@@ -26,6 +28,12 @@ public class AppConfig {
 
     @Value("${lims.rest.password}")
     private String limsRestPassword;
+
+    @Value("${cmo.patient.rest.username}")
+    private String cmoPatientRestUsername;
+
+    @Value("${cmo.patient.rest.password}")
+    private String cmoPatientRestPassword;
 
     @Bean
     @Qualifier("limsRest")
@@ -49,6 +57,15 @@ public class AppConfig {
     @Qualifier("basicRestTemplate")
     public RestTemplate basicRestTemplate() {
         RestTemplate restTemplate = new RestTemplate();
+
+        return restTemplate;
+    }
+
+    @Bean
+    @Qualifier("cmoPatientRestTemplate")
+    public RestTemplate cmoPatientRestTemplate() {
+        RestTemplate restTemplate = new RestTemplate();
+        addBasicAuth(restTemplate, cmoPatientRestUsername, cmoPatientRestPassword);
 
         return restTemplate;
     }

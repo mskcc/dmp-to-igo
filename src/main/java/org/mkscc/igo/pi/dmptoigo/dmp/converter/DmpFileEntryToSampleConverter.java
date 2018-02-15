@@ -1,22 +1,25 @@
 package org.mkscc.igo.pi.dmptoigo.dmp.converter;
 
 import org.mkscc.igo.pi.dmptoigo.dmp.domain.DMPSample;
-import org.mkscc.igo.pi.dmptoigo.dmp.domain.DMPSampleIdView;
 import org.mkscc.igo.pi.dmptoigo.dmp.domain.DmpFileEntry;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.Objects;
 
 public abstract class DmpFileEntryToSampleConverter {
-    @Autowired
     private BamPathRetriever bamPathRetriever;
 
-    public DMPSample convert(DmpFileEntry dmpFileEntry, DMPSampleIdView dmpSampleIdView) {
-        DMPSample dmpSample = convertPart(dmpFileEntry, dmpSampleIdView.getPatientId());
+    @Autowired
+    protected DmpFileEntryToSampleConverter(BamPathRetriever bamPathRetriever) {
+        this.bamPathRetriever = bamPathRetriever;
+    }
+
+    public DMPSample convert(DmpFileEntry dmpFileEntry) {
+        DMPSample dmpSample = convertPart(dmpFileEntry, dmpFileEntry.getPatientId());
 
         dmpSample.setBamPath(bamPathRetriever.retrieve(dmpFileEntry.getAnnonymizedBamId()));
         dmpSample.setSampleType(getSampleClass(dmpFileEntry));
-        dmpSample.setDmpSampleIdView(dmpSampleIdView);
+        dmpSample.setDmpSampleIdView(dmpFileEntry.getDmpSampleIdView());
         dmpSample.setAnnonymizedRunID(dmpFileEntry.getAnnonymizedProjectName());
 
         return dmpSample;

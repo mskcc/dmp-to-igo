@@ -45,6 +45,16 @@ public class DmpFileEntry {
     @CsvBindByPosition(position = 13)
     private String minorAlleleContamination;
 
+    private DMPSampleIdView dmpSampleIdView;
+
+    public DMPSampleIdView getDmpSampleIdView() {
+        return dmpSampleIdView;
+    }
+
+    public void setDmpSampleIdView(DMPSampleIdView dmpSampleIdView) {
+        this.dmpSampleIdView = dmpSampleIdView;
+    }
+
     public String getDmpSampleId() {
         return dmpSampleId;
     }
@@ -155,6 +165,14 @@ public class DmpFileEntry {
 
     public void setMinorAlleleContamination(String minorAlleleContamination) {
         this.minorAlleleContamination = minorAlleleContamination;
+    }
+
+    public String getTumorNormal() {
+        return dmpSampleIdView.getTumorNormal();
+    }
+
+    public String getPatientId() {
+        return dmpSampleIdView.getPatientId();
     }
 
     @Override

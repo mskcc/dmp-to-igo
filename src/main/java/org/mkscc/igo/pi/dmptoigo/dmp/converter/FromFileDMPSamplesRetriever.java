@@ -69,16 +69,14 @@ public class FromFileDMPSamplesRetriever implements DMPSamplesRetriever<DMPSampl
                         continue;
                     }
 
+                    dmpFileEntry.setDmpSampleIdView(retrieveDmpSampleIdView(dmpSampleId));
+
                     DMPSample dmpSample = convert(dmpFileEntry);
                     dmpSamples.add(dmpSample);
                 } catch (Exception e) {
                     LOGGER.warn(String.format("File Entry for sample: %s couldn't be converted to sample. It won't be" +
                             " saved", dmpSampleId), e);
                 }
-
-                //TODO remove after test
-                if(dmpSamples.size() > 20)
-                    break;
             }
 
             fillRunIds(dmpSamples);
@@ -113,10 +111,12 @@ public class FromFileDMPSamplesRetriever implements DMPSamplesRetriever<DMPSampl
     }
 
     private List<DmpFileEntry> getDmpFileEntries() throws FileNotFoundException {
-        return new CsvToBeanBuilder<DmpFileEntry>(new FileReader(dmpSampleFilePath))
+        List<DmpFileEntry> dmpFileEntries = new CsvToBeanBuilder<DmpFileEntry>(new FileReader(dmpSampleFilePath))
                 .withType(DmpFileEntry.class)
                 .build()
                 .parse();
+
+        return dmpFileEntries;
     }
 
     private boolean exists(String sampleId) {
@@ -133,12 +133,9 @@ public class FromFileDMPSamplesRetriever implements DMPSamplesRetriever<DMPSampl
     }
 
     private DMPSample convert(DmpFileEntry dmpFileEntry) {
-        DMPSampleIdView dmpSampleIdView = retrieveDmpSampleIdView(dmpFileEntry.getDmpSampleId());
+        DmpFileEntryToSampleConverter converter = dmpFileEntryToSampleConverterFactory.getConverter(dmpFileEntry);
 
-        DmpFileEntryToSampleConverter converter = dmpFileEntryToSampleConverterFactory.getConverter
-                (dmpFileEntry, dmpSampleIdView);
-
-        DMPSample dmpSample = converter.convert(dmpFileEntry, dmpSampleIdView);
+        DMPSample dmpSample = converter.convert(dmpFileEntry);
 
         return dmpSample;
     }
