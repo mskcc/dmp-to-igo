@@ -17,7 +17,7 @@ public class DMPSample implements Serializable {
     @JsonProperty("dmp_sample_id")
     private String dmpId;
 
-    private DMPSampleIdView dmpSampleIdView;
+    private DMPSampleIdView dmpSampleIdView = new DMPSampleIdView();
 
     private String sampleType;
 
@@ -53,12 +53,12 @@ public class DMPSample implements Serializable {
         return sampleType;
     }
 
-    public int getCounter() {
-        return dmpSampleIdView.getCounter();
-    }
-
     public void setSampleType(String sampleType) {
         this.sampleType = sampleType;
+    }
+
+    public int getCounter() {
+        return dmpSampleIdView.getCounter();
     }
 
     public String getTumorNormal() {

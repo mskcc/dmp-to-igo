@@ -1,7 +1,7 @@
 package org.mkscc.igo.pi.dmptoigo.dmp;
 
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -9,8 +9,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
 @Component
-public class RestDmpSamplesRetriever implements DmpSamplesRetriever {
-    private static final Logger LOGGER = LogManager.getLogger(RestDmpSamplesRetriever.class);
+public class ServiceDmpSamplesRetriever implements DmpSamplesRetriever {
+    private static final Logger LOGGER = LogManager.getLogger(ServiceDmpSamplesRetriever.class);
 
     @Value("${dmp.service.url}")
     private String serviceUrl;
@@ -23,18 +23,16 @@ public class RestDmpSamplesRetriever implements DmpSamplesRetriever {
     private RestTemplate restTemplate;
 
     @Override
-    public DmpPatientWithSamples retrieve(String dmpPatientId) {
-        LOGGER.info(String.format("Resolving MRN for DMP Patient ID: %s", dmpPatientId));
+    public DmpPatient retrieve(String dmpPatientId) {
+        LOGGER.info(String.format("Retrieving samples and information for DMP Patient ID: %s", dmpPatientId));
 
         String url = getUrl(dmpPatientId);
 
         LOGGER.info(String.format("Invoking DMP service method: %s", url));
 
-        DmpPatientWithSamples dmpPatientWithSamples = restTemplate.getForObject(url, DmpPatientWithSamples.class);
+        DmpPatient dmpPatient = restTemplate.getForObject(url, DmpPatient.class);
 
-        LOGGER.info(String.format("Resolved MRN for DMP Patient ID: %s", dmpPatientId));
-
-        return dmpPatientWithSamples;
+        return dmpPatient;
     }
 
     private String getUrl(String dmpPatientId) {

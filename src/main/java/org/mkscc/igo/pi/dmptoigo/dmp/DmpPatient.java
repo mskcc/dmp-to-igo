@@ -4,13 +4,11 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.mkscc.igo.pi.dmptoigo.dmp.domain.DMPSample;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class DmpPatientWithSamples {
+public class DmpPatient {
     @JsonProperty("mrn")
     private String mrn;
 

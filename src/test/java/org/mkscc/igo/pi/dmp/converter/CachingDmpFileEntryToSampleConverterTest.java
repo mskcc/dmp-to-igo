@@ -6,9 +6,9 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mkscc.igo.pi.dmptoigo.cmo.CMOSampleIdResolver;
 import org.mkscc.igo.pi.dmptoigo.cmo.CmoPatientIdRetriever;
-import org.mkscc.igo.pi.dmptoigo.dmp.AnnonymizedRunId2RunIdRepository;
+import org.mkscc.igo.pi.dmptoigo.cmo.repository.ExternalRunIdRepository;
+import org.mkscc.igo.pi.dmptoigo.dmp.DmpPatient;
 import org.mkscc.igo.pi.dmptoigo.dmp.DmpPatientId2CMOPatientIdRepository;
-import org.mkscc.igo.pi.dmptoigo.dmp.DmpPatientWithSamples;
 import org.mkscc.igo.pi.dmptoigo.dmp.DmpSamplesRetriever;
 import org.mkscc.igo.pi.dmptoigo.dmp.converter.BamPathRetriever;
 import org.mkscc.igo.pi.dmptoigo.dmp.converter.CachingDMPFileEntryToSampleConverter;
@@ -45,7 +45,7 @@ public class CachingDmpFileEntryToSampleConverterTest {
     private DmpPatientId2CMOPatientIdRepository dmpPatientId2CMOPatientIdRepository;
 
     @Mock
-    private AnnonymizedRunId2RunIdRepository annonymizedRunId2RunIdRepository;
+    private ExternalRunIdRepository externalRunIdRepository;
 
     @Mock
     private BamPathRetriever bamPathRetriever;
@@ -109,19 +109,19 @@ public class CachingDmpFileEntryToSampleConverterTest {
         return dmpFileEntry;
     }
 
-    private DmpPatientWithSamples getDmpPatientWithSamples(String dmpPatientId, String mrn) {
-        DmpPatientWithSamples dmpPatientWithSamples = new DmpPatientWithSamples();
-        dmpPatientWithSamples.setDmpPatientId(dmpPatientId);
-        dmpPatientWithSamples.setMrn(mrn);
-        dmpPatientWithSamples.setSamples(getSamples());
+    private DmpPatient getDmpPatientWithSamples(String dmpPatientId, String mrn) {
+        DmpPatient dmpPatient = new DmpPatient();
+        dmpPatient.setDmpPatientId(dmpPatientId);
+        dmpPatient.setMrn(mrn);
+        dmpPatient.setSamples(getSamples());
 
-        return dmpPatientWithSamples;
+        return dmpPatient;
     }
 
     @Test
     public void whenNoDMPSamplesFound_shouldThrowException() throws Exception {
         //given
-        when(dmpSamplesRetriever.retrieve(any())).thenReturn(new DmpPatientWithSamples());
+        when(dmpSamplesRetriever.retrieve(any())).thenReturn(new DmpPatient());
 
         SampleType sampleType = SampleType.METASTATIC;
         DmpFileEntry dmpFileEntry = getDmpFileEntry(sampleType);

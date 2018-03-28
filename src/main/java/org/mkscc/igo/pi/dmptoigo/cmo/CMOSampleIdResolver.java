@@ -1,6 +1,6 @@
 package org.mkscc.igo.pi.dmptoigo.cmo;
 
-import org.mskcc.domain.sample.ExternalSample;
+import org.mskcc.domain.external.ExternalSample;
 
 @FunctionalInterface
 public interface CMOSampleIdResolver {

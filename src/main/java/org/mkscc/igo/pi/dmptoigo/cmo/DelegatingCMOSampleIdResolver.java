@@ -2,7 +2,7 @@ package org.mkscc.igo.pi.dmptoigo.cmo;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.mskcc.domain.sample.ExternalSample;
+import org.mskcc.domain.external.ExternalSample;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -36,7 +36,7 @@ public class DelegatingCMOSampleIdResolver implements CMOSampleIdResolver {
 
         String cmoId = cmoIdEntity.getBody();
 
-        LOGGER.info(String.format("Cmo sample id retrieved for sample %s: %s", externalSample.getId(), cmoId));
+        LOGGER.info(String.format("Cmo sample id retrieved for sample %s: %s", externalSample.getExternalId(), cmoId));
 
         return cmoId;
     }

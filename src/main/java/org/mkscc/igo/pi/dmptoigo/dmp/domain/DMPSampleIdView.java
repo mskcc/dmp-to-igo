@@ -1,10 +1,10 @@
 package org.mkscc.igo.pi.dmptoigo.dmp.domain;
 
 public class DMPSampleIdView {
-    private String patientId;
-    private String tumorNormal;
+    private String patientId = "";
+    private String tumorNormal = "";
     private int counter;
-    private String assay;
+    private String assay = "";
 
     public String getPatientId() {
         return patientId;

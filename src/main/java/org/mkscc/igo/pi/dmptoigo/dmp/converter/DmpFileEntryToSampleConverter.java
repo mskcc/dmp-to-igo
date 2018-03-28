@@ -17,7 +17,8 @@ public abstract class DmpFileEntryToSampleConverter {
     public DMPSample convert(DmpFileEntry dmpFileEntry) {
         DMPSample dmpSample = convertPart(dmpFileEntry, dmpFileEntry.getPatientId());
 
-        dmpSample.setBamPath(bamPathRetriever.retrieve(dmpFileEntry.getAnnonymizedBamId()));
+        String bamPath = bamPathRetriever.retrieve(dmpFileEntry.getAnnonymizedBamId());
+        dmpSample.setBamPath(bamPath);
         dmpSample.setSampleType(getSampleClass(dmpFileEntry));
         dmpSample.setDmpSampleIdView(dmpFileEntry.getDmpSampleIdView());
         dmpSample.setAnnonymizedRunID(dmpFileEntry.getAnnonymizedProjectName());

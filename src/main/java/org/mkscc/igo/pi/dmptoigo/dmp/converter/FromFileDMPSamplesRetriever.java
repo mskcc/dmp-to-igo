@@ -4,19 +4,16 @@ import com.opencsv.bean.CsvToBeanBuilder;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.mkscc.igo.pi.dmptoigo.dmp.AnnonymizedRunId2RunIdRepository;
+import org.mkscc.igo.pi.dmptoigo.cmo.repository.ExternalRunIdRepository;
+import org.mkscc.igo.pi.dmptoigo.cmo.repository.ExternalSampleRepository;
 import org.mkscc.igo.pi.dmptoigo.dmp.DMPSampleToExternalSampleConverter;
 import org.mkscc.igo.pi.dmptoigo.dmp.domain.DMPSample;
 import org.mkscc.igo.pi.dmptoigo.dmp.domain.DMPSampleIdView;
 import org.mkscc.igo.pi.dmptoigo.dmp.domain.DmpFileEntry;
-import org.mskcc.domain.sample.ExternalSample;
+import org.mskcc.util.notificator.Notificator;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestTemplate;
 
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -36,21 +33,19 @@ public class FromFileDMPSamplesRetriever implements DMPSamplesRetriever<DMPSampl
     @Autowired
     private DMPSampleToExternalSampleConverter dmpSampleToExternalSampleConverter;
 
-    @Value("${external.sample.rest.url}")
-    private String externalSampleRestUrl;
-
-    @Value("${external.sample.rest.samples.endpoint}")
-    private String samplesEndpoint;
-
-    @Autowired
-    @Qualifier("externalSampleRest")
-    private RestTemplate restTemplate;
-
     @Autowired
     private DMPFileEntryToSampleConverterFactory dmpFileEntryToSampleConverterFactory;
 
     @Autowired
-    private AnnonymizedRunId2RunIdRepository annonymizedRunId2RunIdRepository;
+    private ExternalRunIdRepository externalRunIdRepository;
+
+    @Autowired
+    private ExternalSampleRepository externalSampleRepository;
+
+    @Autowired
+    private Notificator notificator;
+
+    private List<String> dmpIdsToProcess = new ArrayList<>();
 
     @Override
     public List<DMPSample> retrieve() {
@@ -58,24 +53,23 @@ public class FromFileDMPSamplesRetriever implements DMPSamplesRetriever<DMPSampl
 
         try {
             List<DmpFileEntry> dmpFileEntries = getDmpFileEntries();
-
             List<DMPSample> dmpSamples = new ArrayList<>();
+
             for (DmpFileEntry dmpFileEntry : dmpFileEntries) {
-                String dmpSampleId = dmpFileEntry.getDmpSampleId();
-                try {
-                    if (exists(dmpSampleId)) {
-                        LOGGER.info(String.format("Sample with id %s already exists in database. It will be skipped.",
-                                dmpSampleId));
-                        continue;
+                String dmpId = dmpFileEntry.getDmpSampleId();
+
+                if (!exists(dmpId)) {
+                    LOGGER.info(String.format("Converting dmp file entry to DMP Sample: %s", dmpId));
+                    try {
+                        dmpFileEntry.setDmpSampleIdView(retrieveDmpSampleIdView(dmpId));
+
+                        DMPSample dmpSample = convert(dmpFileEntry);
+                        dmpSamples.add(dmpSample);
+                    } catch (Exception e) {
+                        logAndNofifyError(dmpId, e);
                     }
-
-                    dmpFileEntry.setDmpSampleIdView(retrieveDmpSampleIdView(dmpSampleId));
-
-                    DMPSample dmpSample = convert(dmpFileEntry);
-                    dmpSamples.add(dmpSample);
-                } catch (Exception e) {
-                    LOGGER.warn(String.format("File Entry for sample: %s couldn't be converted to sample. It won't be" +
-                            " saved", dmpSampleId), e);
+                } else {
+                    LOGGER.info(String.format("Sample with id %s already exists. It will be skipped.", dmpId));
                 }
             }
 
@@ -91,21 +85,47 @@ public class FromFileDMPSamplesRetriever implements DMPSamplesRetriever<DMPSampl
         }
     }
 
+    private boolean exists(String sampleId) {
+        return externalSampleRepository.exists(sampleId);
+    }
+
+    private void logAndNofifyError(String dmpSampleId, Exception e) {
+        String message = String.format("File Entry for sample: %s couldn't be converted to DMP Sample. It " +
+                "won't be saved", dmpSampleId);
+        LOGGER.warn(message, e);
+
+        String messageWithCause = String.format("%s. Cause: %s", message, e.getMessage());
+        tryToNotifyOfErrors(messageWithCause, dmpSampleId);
+    }
+
+    private void tryToNotifyOfErrors(String message, String dmpSampleId) {
+        try {
+            notificator.notifyMessage("", message);
+        } catch (Exception e) {
+            LOGGER.warn(String.format("Unable to send notification about errors in converting dmp sample: %s",
+                    dmpSampleId), e);
+        }
+    }
+
     private void fillRunIds(List<DMPSample> dmpSamples) {
         LOGGER.info(String.format("Filling in mapped run ids"));
         for (DMPSample dmpSample : dmpSamples) {
-            if (StringUtils.isEmpty(dmpSample.getRunID())) {
-                try {
-                    String runId = annonymizedRunId2RunIdRepository.getRunIdByAnnonymizedRunId(dmpSample
-                            .getAnnonymizedRunID());
+            fillRunIdIfEmpty(dmpSample);
+        }
+    }
 
-                    LOGGER.debug(String.format("Filling in run id for dmp sample: %s with value: %s", dmpSample.getDmpId
-                            (), runId));
+    private void fillRunIdIfEmpty(DMPSample dmpSample) {
+        if (StringUtils.isEmpty(dmpSample.getRunID())) {
+            try {
+                String runId = externalRunIdRepository.getRunIdByAnonymizedRunId(dmpSample
+                        .getAnnonymizedRunID());
 
-                    dmpSample.setRunID(runId);
-                } catch (Exception e) {
-                    LOGGER.warn(String.format("Unable to fill in run id for dmp sample: %s", dmpSample), e);
-                }
+                LOGGER.debug(String.format("Filling in run id for dmp sample: %s with value: %s", dmpSample.getDmpId
+                        (), runId));
+
+                dmpSample.setRunID(runId);
+            } catch (Exception e) {
+                LOGGER.warn(String.format("Unable to fill in run id for dmp sample: %s", dmpSample), e);
             }
         }
     }
@@ -119,24 +139,9 @@ public class FromFileDMPSamplesRetriever implements DMPSamplesRetriever<DMPSampl
         return dmpFileEntries;
     }
 
-    private boolean exists(String sampleId) {
-        String url = String.format("%s/%s/%s", externalSampleRestUrl, samplesEndpoint, sampleId);
-
-        ResponseEntity<ExternalSample[]> externalSampleResponse = restTemplate.getForEntity(url,
-                ExternalSample[].class);
-
-        boolean sampleExists = externalSampleResponse.getStatusCode() == HttpStatus.NOT_FOUND ||
-                externalSampleResponse.getBody()
-                        .length > 0;
-
-        return sampleExists;
-    }
-
     private DMPSample convert(DmpFileEntry dmpFileEntry) {
         DmpFileEntryToSampleConverter converter = dmpFileEntryToSampleConverterFactory.getConverter(dmpFileEntry);
-
         DMPSample dmpSample = converter.convert(dmpFileEntry);
-
         return dmpSample;
     }
 

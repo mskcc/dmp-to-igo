@@ -28,25 +28,34 @@ repositories {
     mavenLocal()
 }
 
+configurations {
+    all*.exclude module : 'spring-boot-starter-logging'
+}
+
 dependencies {
-    compile group: 'org.mskcc.common', name:'common-domain', version: '2.1.0-SNAPSHOT'
+    compile group: 'org.mskcc.common', name:'common-domain', version: '2.2.0-SNAPSHOT'
     compile group: 'com.opencsv', name: 'opencsv', version: '4.1'
 
     compile ('javax.servlet:javax.servlet-api')
 
     compile ('org.springframework.boot:spring-boot')
     compile ('org.springframework.boot:spring-boot-autoconfigure')
+    compile('org.springframework.boot:spring-boot-starter-mail')
 
     compile('org.springframework.boot:spring-boot-starter-web') {
         exclude group: 'org.springframework.boot', module: 'spring-boot-starter-logging'
     }
 
-    compile ('org.springframework.boot:spring-boot-starter-log4j2')
+    compile ('org.springframework.boot:spring-boot-starter-log4j2') 
     
     testCompile ('org.springframework.boot:spring-boot-starter-test')
+    testCompile 'org.assertj:assertj-core:3.9.0'
 }
 
 bootRun {
+    // @TODO remove after tests
+    System.setProperty("spring.profiles.active", "dev")
+
     if (System.getProperty('DEBUG', 'false') == 'true') {
         jvmArgs '-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005'
     }
@@ -65,4 +74,33 @@ springBoot {
 
 jar {
     baseName = 'dmp-to-igo'
+}
+
+sourceSets {
+    integrationTest {
+        java {
+            compileClasspath += main.output + test.output
+            runtimeClasspath += main.output + test.output
+            srcDir file('src/integration-test/java')
+        }
+        resources.srcDir file('src/integration-test/resources')
+        compileClasspath += sourceSets.main.runtimeClasspath + sourceSets.test.runtimeClasspath
+    }
+}
+
+configurations {
+    integrationTestCompile.extendsFrom compile
+    integrationTestRuntime.extendsFrom runtime
+}
+
+task integrationTest(type: Test) {
+    if (System.getProperty('DEBUG', 'false') == 'true')
+        jvmArgs '-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5008'
+
+    systemProperties System.properties
+    testClassesDir = sourceSets.integrationTest.output.classesDir
+    classpath = sourceSets.integrationTest.runtimeClasspath
+    description = "Integration Tests"
+    outputs.upToDateWhen { false }
+    environment SPRING_PROFILES_ACTIVE: environment.SPRING_PROFILES_ACTIVE ?: "dev"
 }
