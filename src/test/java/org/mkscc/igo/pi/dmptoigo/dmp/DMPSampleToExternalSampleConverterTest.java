@@ -36,7 +36,7 @@ public class DMPSampleToExternalSampleConverterTest {
     public void whenDmpSampleIsTumor_shouldExternalSampleHaveDefaultValuesForTumor() {
         //given
         DMPSample dmpSample = new DMPSample();
-        dmpSample.setRunID(runId);
+        dmpSample.setAnnonymizedRunID(runId);
         dmpSample.setDmpId(externalId1);
         dmpSample.setBamPath(bamPath);
         dmpSample.setSampleType(sampleType.getValue());
@@ -75,7 +75,7 @@ public class DMPSampleToExternalSampleConverterTest {
     public void whenDmpSampleIsNormal_shouldExternalSampleHaveDefaultValuesForNormal() {
         //given
         DMPSample dmpSample = new DMPSample();
-        dmpSample.setRunID(runId);
+        dmpSample.setAnnonymizedRunID(runId);
         dmpSample.setDmpId(externalId2);
         dmpSample.setBamPath(bamPath);
         dmpSample.setSampleType(sampleType.getValue());
