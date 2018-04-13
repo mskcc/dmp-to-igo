@@ -22,6 +22,10 @@ public abstract class DmpFileEntryToSampleConverter {
         dmpSample.setSampleType(getSampleClass(dmpFileEntry));
         dmpSample.setDmpSampleIdView(dmpFileEntry.getDmpSampleIdView());
         dmpSample.setAnnonymizedRunID(dmpFileEntry.getAnnonymizedProjectName());
+        dmpSample.setOncotreeCode(dmpFileEntry.getOncotreeCode());
+        dmpSample.setPrimarySite(dmpFileEntry.getPrimarySite());
+        dmpSample.setMetastatisSite(dmpFileEntry.getMetastasisSite());
+        dmpSample.setTissueType(dmpFileEntry.getTissueType());
 
         return dmpSample;
     }

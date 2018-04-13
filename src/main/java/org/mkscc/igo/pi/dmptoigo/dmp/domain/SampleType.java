@@ -9,9 +9,6 @@ public enum SampleType {
     PRIMARY("0", SampleClass.PRIMARY),
     METASTATIC("1", SampleClass.METASTASIS);
 
-    private final String value;
-    private final SampleClass sampleClass;
-
     private static Map<String, SampleType> valueToSampleType = new HashMap<>();
 
     static {
@@ -19,6 +16,9 @@ public enum SampleType {
             valueToSampleType.put(sampleType.getValue(), sampleType);
         }
     }
+
+    private final String value;
+    private final SampleClass sampleClass;
 
     SampleType(String value, SampleClass sampleClass) {
 
@@ -28,7 +28,7 @@ public enum SampleType {
 
     public static SampleType getByValue(String value) {
         if(!valueToSampleType.containsKey(value))
-            throw new IllegalArgumentException(String.format("Unsupported Sample Type with value: %d", value));
+            throw new IllegalArgumentException(String.format("Unsupported Sample Type with value: %s", value));
 
         return valueToSampleType.get(value);
     }

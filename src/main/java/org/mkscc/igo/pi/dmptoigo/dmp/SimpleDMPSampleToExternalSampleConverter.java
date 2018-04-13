@@ -4,10 +4,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.mkscc.igo.pi.dmptoigo.cmo.CMOSampleIdResolver;
-import org.mkscc.igo.pi.dmptoigo.cmo.repository.ExternalRunIdRepository;
 import org.mkscc.igo.pi.dmptoigo.dmp.domain.DMPSample;
 import org.mkscc.igo.pi.dmptoigo.dmp.domain.DMPTumorNormal;
 import org.mkscc.igo.pi.dmptoigo.dmp.domain.SampleType;
+import org.mskcc.domain.Recipe;
 import org.mskcc.domain.external.ExternalSample;
 import org.mskcc.domain.sample.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,23 +19,21 @@ public class SimpleDMPSampleToExternalSampleConverter implements DMPSampleToExte
 
     private final CMOSampleIdResolver cmoSampleIdResolver;
     private final DmpPatientId2CMOPatientIdRepository dmpPatientId2CMOPatientIdRepository;
-    private ExternalRunIdRepository externalRunIdRepository;
+    private DMPGenderToIgoSexConverter dmpGenderToIgoSexConverter;
 
     @Autowired
-    public SimpleDMPSampleToExternalSampleConverter(CMOSampleIdResolver cmoSampleIdResolver,
-                                                    DmpPatientId2CMOPatientIdRepository
-                                                            dmpPatientId2CMOPatientIdRepository,
-                                                    ExternalRunIdRepository externalRunIdRepository) {
+    public SimpleDMPSampleToExternalSampleConverter(
+            CMOSampleIdResolver cmoSampleIdResolver,
+            DmpPatientId2CMOPatientIdRepository dmpPatientId2CMOPatientIdRepository,
+            DMPGenderToIgoSexConverter dmpGenderToIgoSexConverter) {
         this.cmoSampleIdResolver = cmoSampleIdResolver;
         this.dmpPatientId2CMOPatientIdRepository = dmpPatientId2CMOPatientIdRepository;
-        this.externalRunIdRepository = externalRunIdRepository;
+        this.dmpGenderToIgoSexConverter = dmpGenderToIgoSexConverter;
     }
 
     @Override
     public ExternalSample convert(DMPSample dmpSample) {
         LOGGER.info(String.format("Converting dmp sample: %s to External Sample", dmpSample));
-
-        fillInRunIdIfEmpty(dmpSample);
 
         TumorNormalType tumorNormal = getTumorNormal(dmpSample.getTumorNormal());
         ExternalSample externalSample = new ExternalSample(
@@ -43,16 +41,21 @@ public class SimpleDMPSampleToExternalSampleConverter implements DMPSampleToExte
                 dmpSample.getDmpId(),
                 dmpSample.getPatientDmpId(),
                 dmpSample.getBamPath(),
-                dmpSample.getRunID(),
-                getSampleClass(tumorNormal, dmpSample.getSampleType()),
+                dmpSample.getAnnonymizedRunID(),
+                getSampleClass(dmpSample),
                 getSampleOrigin(tumorNormal),
                 tumorNormal.getValue()
         );
 
         externalSample.setNucleidAcid(DefaultValues.DEFAULT_NUCLEID_ACID.getValue());
         externalSample.setPatientCmoId(getCmoPatientId(dmpSample.getPatientDmpId()));
-        externalSample.setSpecimenType(getSpecimenType(tumorNormal));
+        externalSample.setSpecimenType(getSpecimenType(dmpSample));
         externalSample.setCmoId(cmoSampleIdResolver.resolve(externalSample));
+        externalSample.setBaitVersion(DefaultValues.DEFAULT_BAIT_VERSION.getValue());
+        externalSample.setSex(getSex(dmpSample));
+        externalSample.setOncotreeCode(dmpSample.getOncotreeCode());
+        externalSample.setTissueSite(getTissueSite(dmpSample));
+        externalSample.setPreservationType(getPreservationType(dmpSample));
 
         LOGGER.info(String.format("Dmp Sample %s converted to External Sample: %s", dmpSample.getDmpId(),
                 externalSample));
@@ -60,31 +63,45 @@ public class SimpleDMPSampleToExternalSampleConverter implements DMPSampleToExte
         return externalSample;
     }
 
-    private void fillInRunIdIfEmpty(DMPSample dmpSample) {
-        if (StringUtils.isEmpty(dmpSample.getRunID())) {
-            LOGGER.debug(String.format("Filling in run id for dmp sample: %s", dmpSample.getDmpId()));
-
-            String runId = externalRunIdRepository.getRunIdByAnonymizedRunId(dmpSample
-                    .getAnnonymizedRunID());
-
-            LOGGER.debug(String.format("Run id %s found for dmp sample: %s ", runId, dmpSample.getDmpId()));
-
-            dmpSample.setRunID(runId);
+    private String getTissueSite(DMPSample dmpSample) {
+        try {
+            if (SampleType.getByValue(dmpSample.getSampleType()) == SampleType.PRIMARY)
+                return dmpSample.getPrimarySite();
+            return dmpSample.getMetastatisSite();
+        } catch (Exception e) {
+            LOGGER.warn(String.format("Tissue site for dmp sample %s could not be retrieved this left empty",
+                    dmpSample.getDmpId()));
+            return "";
         }
     }
 
-    private String getSampleClass(TumorNormalType tumorNormalType, String sampleType) {
-        if (tumorNormalType == TumorNormalType.NORMAL)
-            return DefaultValues.DEFAULT_NORMAL_SAMPLE_CLASS.getValue();
-
-        if (StringUtils.isEmpty(sampleType))
+    private String getSex(DMPSample dmpSample) {
+        try {
+            return dmpGenderToIgoSexConverter.convert(dmpSample.getGender()).toString();
+        } catch (Exception e) {
+            LOGGER.warn(String.format("Sex for dmp sample %s could not be retrieved this left empty", dmpSample
+                    .getDmpId()));
             return "";
-        return SampleType.getByValue(sampleType).getSampleClass().getValue();
+        }
     }
 
-    private String getSpecimenType(TumorNormalType tumorNormal) {
-        return tumorNormal == TumorNormalType.NORMAL ? DefaultValues.DEFAULT_NORMAL_SPECIMEN_TYPE.getValue() :
-                DefaultValues.DEFAULT_TUMOR_SPECIMEN_TYPE.getValue();
+    private String getPreservationType(DMPSample dmpSample) {
+        return dmpSample.isTumor() ? DefaultValues.DEFAULT_TUMOR_PRESERVATION : DefaultValues
+                .DEFAULT_NORMAL_PRESERVATION;
+    }
+
+    private String getSampleClass(DMPSample dmpSample) {
+        if (!dmpSample.isTumor())
+            return DefaultValues.DEFAULT_NORMAL_SAMPLE_CLASS.getValue();
+
+        if (StringUtils.isEmpty(dmpSample.getSampleType()))
+            return "";
+        return SampleType.getByValue(dmpSample.getSampleType()).getSampleClass().getValue();
+    }
+
+    private String getSpecimenType(DMPSample dmpSample) {
+        return dmpSample.isTumor() ? DefaultValues.DEFAULT_TUMOR_SPECIMEN_TYPE.getValue() :
+                DefaultValues.DEFAULT_NORMAL_SPECIMEN_TYPE.getValue();
     }
 
     private String getSampleOrigin(TumorNormalType tumorNormal) {
@@ -107,5 +124,8 @@ public class SimpleDMPSampleToExternalSampleConverter implements DMPSampleToExte
         public static final SpecimenType DEFAULT_NORMAL_SPECIMEN_TYPE = SpecimenType.BLOOD;
         public static final SpecimenType DEFAULT_TUMOR_SPECIMEN_TYPE = SpecimenType.BIOPSY;
         public static final SampleClass DEFAULT_NORMAL_SAMPLE_CLASS = SampleClass.NORMAL;
+        public static final String DEFAULT_TUMOR_PRESERVATION = "FFPE";
+        public static final String DEFAULT_NORMAL_PRESERVATION = "EDTA-Streck";
+        public static final Recipe DEFAULT_BAIT_VERSION = Recipe.IMPACT_468;
     }
 }

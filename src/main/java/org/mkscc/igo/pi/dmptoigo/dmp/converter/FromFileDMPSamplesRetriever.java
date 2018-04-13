@@ -1,10 +1,8 @@
 package org.mkscc.igo.pi.dmptoigo.dmp.converter;
 
 import com.opencsv.bean.CsvToBeanBuilder;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.mkscc.igo.pi.dmptoigo.cmo.repository.ExternalRunIdRepository;
 import org.mkscc.igo.pi.dmptoigo.cmo.repository.ExternalSampleRepository;
 import org.mkscc.igo.pi.dmptoigo.dmp.DMPSampleToExternalSampleConverter;
 import org.mkscc.igo.pi.dmptoigo.dmp.domain.DMPSample;
@@ -35,9 +33,6 @@ public class FromFileDMPSamplesRetriever implements DMPSamplesRetriever<DMPSampl
 
     @Autowired
     private DMPFileEntryToSampleConverterFactory dmpFileEntryToSampleConverterFactory;
-
-    @Autowired
-    private ExternalRunIdRepository externalRunIdRepository;
 
     @Autowired
     private ExternalSampleRepository externalSampleRepository;
@@ -73,15 +68,13 @@ public class FromFileDMPSamplesRetriever implements DMPSamplesRetriever<DMPSampl
                 }
             }
 
-            fillRunIds(dmpSamples);
-
             return dmpSamples;
         } catch (FileNotFoundException e) {
             throw new RuntimeException(String.format("File with DMP samples not found: %s. No samples will be saved.",
                     dmpSampleFilePath), e);
         } catch (Exception e) {
             throw new RuntimeException(String.format("Error while retrieving DMP Samples from file: %s. No samples " +
-                    "will be saved", dmpSampleFilePath));
+                    "will be saved", dmpSampleFilePath), e);
         }
     }
 
@@ -107,29 +100,6 @@ public class FromFileDMPSamplesRetriever implements DMPSamplesRetriever<DMPSampl
         }
     }
 
-    private void fillRunIds(List<DMPSample> dmpSamples) {
-        LOGGER.info(String.format("Filling in mapped run ids"));
-        for (DMPSample dmpSample : dmpSamples) {
-            fillRunIdIfEmpty(dmpSample);
-        }
-    }
-
-    private void fillRunIdIfEmpty(DMPSample dmpSample) {
-        if (StringUtils.isEmpty(dmpSample.getRunID())) {
-            try {
-                String runId = externalRunIdRepository.getRunIdByAnonymizedRunId(dmpSample
-                        .getAnnonymizedRunID());
-
-                LOGGER.debug(String.format("Filling in run id for dmp sample: %s with value: %s", dmpSample.getDmpId
-                        (), runId));
-
-                dmpSample.setRunID(runId);
-            } catch (Exception e) {
-                LOGGER.warn(String.format("Unable to fill in run id for dmp sample: %s", dmpSample), e);
-            }
-        }
-    }
-
     private List<DmpFileEntry> getDmpFileEntries() throws FileNotFoundException {
         List<DmpFileEntry> dmpFileEntries = new CsvToBeanBuilder<DmpFileEntry>(new FileReader(dmpSampleFilePath))
                 .withType(DmpFileEntry.class)
@@ -142,6 +112,7 @@ public class FromFileDMPSamplesRetriever implements DMPSamplesRetriever<DMPSampl
     private DMPSample convert(DmpFileEntry dmpFileEntry) {
         DmpFileEntryToSampleConverter converter = dmpFileEntryToSampleConverterFactory.getConverter(dmpFileEntry);
         DMPSample dmpSample = converter.convert(dmpFileEntry);
+
         return dmpSample;
     }
 

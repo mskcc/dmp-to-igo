@@ -11,8 +11,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
 @Component
-public class DelegatingCMOSampleIdResolver implements CMOSampleIdResolver {
-    private static final Logger LOGGER = LogManager.getLogger(DelegatingCMOSampleIdResolver.class);
+public class RestCMOSampleIdResolver implements CMOSampleIdResolver {
+    private static final Logger LOGGER = LogManager.getLogger(RestCMOSampleIdResolver.class);
 
     @Autowired
     @Qualifier("limsRest")

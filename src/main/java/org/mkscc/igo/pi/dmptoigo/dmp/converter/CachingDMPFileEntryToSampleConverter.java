@@ -2,14 +2,13 @@ package org.mkscc.igo.pi.dmptoigo.dmp.converter;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.mkscc.igo.pi.dmptoigo.cmo.CmoPatientIdRetriever;
-import org.mkscc.igo.pi.dmptoigo.cmo.repository.ExternalRunIdRepository;
+import org.mkscc.igo.pi.dmptoigo.cmo.CMOPatientInfoRetriever;
 import org.mkscc.igo.pi.dmptoigo.dmp.DmpPatient;
 import org.mkscc.igo.pi.dmptoigo.dmp.DmpPatientId2CMOPatientIdRepository;
 import org.mkscc.igo.pi.dmptoigo.dmp.DmpSamplesRetriever;
 import org.mkscc.igo.pi.dmptoigo.dmp.domain.DMPSample;
 import org.mkscc.igo.pi.dmptoigo.dmp.domain.DmpFileEntry;
-import org.mskcc.domain.external.ExternalRun;
+import org.mskcc.domain.patient.CRDBPatientInfo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -21,21 +20,18 @@ public class CachingDMPFileEntryToSampleConverter extends DmpFileEntryToSampleCo
     private static final Logger LOGGER = LogManager.getLogger(CachingDMPFileEntryToSampleConverter.class);
 
     private DmpPatientId2CMOPatientIdRepository dmpPatientId2CMOPatientIdRepository;
-    private ExternalRunIdRepository externalRunIdRepository;
     private DmpSamplesRetriever dmpSamplesRetriever;
-    private CmoPatientIdRetriever cmoPatientIdRetriever;
+    private CMOPatientInfoRetriever cmoPatientIdRetriever;
 
     @Autowired
     public CachingDMPFileEntryToSampleConverter(DmpPatientId2CMOPatientIdRepository
                                                             dmpPatientId2CMOPatientIdRepository,
-                                                ExternalRunIdRepository externalRunIdRepository,
                                                 DmpSamplesRetriever dmpSamplesRetriever,
-                                                CmoPatientIdRetriever cmoPatientIdRetriever,
+                                                CMOPatientInfoRetriever cmoPatientIdRetriever,
                                                 BamPathRetriever bamPathRetriever) {
 
         super(bamPathRetriever);
         this.dmpPatientId2CMOPatientIdRepository = dmpPatientId2CMOPatientIdRepository;
-        this.externalRunIdRepository = externalRunIdRepository;
         this.dmpSamplesRetriever = dmpSamplesRetriever;
         this.cmoPatientIdRetriever = cmoPatientIdRetriever;
     }
@@ -45,7 +41,8 @@ public class CachingDMPFileEntryToSampleConverter extends DmpFileEntryToSampleCo
         DmpPatient dmpPatient = dmpSamplesRetriever.retrieve(dmpPatientId);
 
         Optional<DMPSample> optionalDmpSample = dmpPatient.getSamples().values().stream()
-                .filter(s -> Objects.equals(s.getDmpId(), dmpFileEntry.getDmpSampleId())).findFirst();
+                .filter(s -> Objects.equals(s.getDmpId(), dmpFileEntry.getDmpSampleId()))
+                .findFirst();
 
         if (!optionalDmpSample.isPresent()) {
             throw new DMPSampleNotFoundException(String.format("DMP " +
@@ -54,13 +51,13 @@ public class CachingDMPFileEntryToSampleConverter extends DmpFileEntryToSampleCo
 
         DMPSample dmpSample = optionalDmpSample.get();
         String mrn = dmpPatient.getMrn();
-        String cmoPatientId = cmoPatientIdRetriever.resolve(mrn);
+        CRDBPatientInfo crdbPatientInfo = cmoPatientIdRetriever.resolve(mrn);
 
-        dmpPatientId2CMOPatientIdRepository.put(dmpPatientId, cmoPatientId);
+        dmpSample.setGender(DMPSample.Gender.fromString(crdbPatientInfo.getGender()));
+
+        dmpPatientId2CMOPatientIdRepository.put(dmpPatientId, crdbPatientInfo.getPatientId());
 
         LOGGER.info(String.format("Patient id mapping cached for dmp patient id: %s", dmpPatientId));
-
-        externalRunIdRepository.store(new ExternalRun(dmpSample.getRunID(), dmpFileEntry.getAnnonymizedProjectName()));
 
         LOGGER.info(String.format("Converted dmp file entry: %s to dmp sample: %s", dmpFileEntry, dmpSample));
 

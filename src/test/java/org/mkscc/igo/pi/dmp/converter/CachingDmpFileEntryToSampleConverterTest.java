@@ -4,9 +4,8 @@ import org.hamcrest.object.IsCompatibleType;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mkscc.igo.pi.dmptoigo.cmo.CMOPatientInfoRetriever;
 import org.mkscc.igo.pi.dmptoigo.cmo.CMOSampleIdResolver;
-import org.mkscc.igo.pi.dmptoigo.cmo.CmoPatientIdRetriever;
-import org.mkscc.igo.pi.dmptoigo.cmo.repository.ExternalRunIdRepository;
 import org.mkscc.igo.pi.dmptoigo.dmp.DmpPatient;
 import org.mkscc.igo.pi.dmptoigo.dmp.DmpPatientId2CMOPatientIdRepository;
 import org.mkscc.igo.pi.dmptoigo.dmp.DmpSamplesRetriever;
@@ -19,6 +18,7 @@ import org.mkscc.igo.pi.dmptoigo.dmp.domain.SampleType;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.mskcc.domain.patient.CRDBPatientInfo;
 import org.mskcc.util.TestUtils;
 
 import java.util.HashMap;
@@ -33,7 +33,8 @@ import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class CachingDmpFileEntryToSampleConverterTest {
-    private final CmoPatientIdRetriever cmoPatientIdRetriever = mock(CmoPatientIdRetriever.class);
+    public static final DMPSample.Gender MALE_GENDER = DMPSample.Gender.MALE;
+    private final CMOPatientInfoRetriever cmoPatientInfoRetriever = mock(CMOPatientInfoRetriever.class);
     private final DmpSamplesRetriever dmpSamplesRetriever = mock(DmpSamplesRetriever.class);
     private final String correctDmpPatientId = "P-1234567";
     private final String dmpSampleId = "P-1234567-something";
@@ -43,9 +44,6 @@ public class CachingDmpFileEntryToSampleConverterTest {
 
     @Mock
     private DmpPatientId2CMOPatientIdRepository dmpPatientId2CMOPatientIdRepository;
-
-    @Mock
-    private ExternalRunIdRepository externalRunIdRepository;
 
     @Mock
     private BamPathRetriever bamPathRetriever;
@@ -62,7 +60,11 @@ public class CachingDmpFileEntryToSampleConverterTest {
 
     @Before
     public void setUp() throws Exception {
-        when(cmoPatientIdRetriever.resolve(any())).thenReturn(cmoPatientId);
+        CRDBPatientInfo crdbPatientInfo = new CRDBPatientInfo();
+        crdbPatientInfo.setPatientId(cmoPatientId);
+        crdbPatientInfo.setGender(MALE_GENDER.toString());
+
+        when(cmoPatientInfoRetriever.resolve(any())).thenReturn(crdbPatientInfo);
         when(cmoSampleIdResolver.resolve(any())).thenReturn(cmoSampleId);
         when(bamPathRetriever.retrieve(annonymizedBamPath)).thenReturn(bamPath);
     }
@@ -95,6 +97,7 @@ public class CachingDmpFileEntryToSampleConverterTest {
         assertThat(dmpSample.getBamPath(), is(bamPath));
         assertThat(dmpSample.getRunID(), is(runId));
         assertThat(dmpSample.getPatientDmpId(), is(correctDmpPatientId));
+        assertThat(dmpSample.getGender(), is(MALE_GENDER));
     }
 
     private DmpFileEntry getDmpFileEntry(SampleType sampleType) {

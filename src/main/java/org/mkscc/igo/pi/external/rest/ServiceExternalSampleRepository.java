@@ -1,5 +1,6 @@
 package org.mkscc.igo.pi.external.rest;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.mkscc.igo.pi.dmptoigo.cmo.repository.ExternalSampleRepository;
@@ -31,11 +32,12 @@ public class ServiceExternalSampleRepository implements ExternalSampleRepository
     public boolean exists(String sampleId) {
         String url = String.format("%s/%s/%s", externalSampleRestUrl, samplesEndpoint, sampleId);
 
-        ResponseEntity<ExternalSample[]> externalSampleResponse = restTemplate.getForEntity(url,
-                ExternalSample[].class);
+        ResponseEntity<ExternalSample> externalSampleResponse = restTemplate.getForEntity(url,
+                ExternalSample.class);
 
-        boolean sampleExists = externalSampleResponse.getStatusCode() != HttpStatus.NOT_FOUND &&
-                externalSampleResponse.getBody().length > 0;
+        boolean sampleExists = externalSampleResponse.getStatusCode() == HttpStatus.OK &&
+                externalSampleResponse.getBody() != null && !StringUtils.isEmpty(externalSampleResponse.getBody()
+                .getExternalId());
 
         return sampleExists;
     }
@@ -47,9 +49,12 @@ public class ServiceExternalSampleRepository implements ExternalSampleRepository
         HttpEntity<ExternalSample> request = new HttpEntity<>(externalSample);
 
         String url = String.format("%s/%s", externalSampleRestUrl, samplesEndpoint);
-        ResponseEntity<ExternalSample> responseEntity = restTemplate.postForEntity(url, request, ExternalSample.class);
+        ResponseEntity<String> responseEntity = restTemplate.postForEntity(url, request, String.class);
 
         HttpStatus statusCode = responseEntity.getStatusCode();
         LOGGER.info(String.format("Sample %s saving status: %s", externalSample.getExternalId(), statusCode));
+
+        if (statusCode != HttpStatus.OK)
+            throw new RuntimeException(String.format("Unable to save external sample: %s", externalSample));
     }
 }
