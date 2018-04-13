@@ -39,6 +39,7 @@ gradle-app.setting
 hs_err_pid*
 
 application*.properties
+connection*.properties
 
 .idea
 logs/

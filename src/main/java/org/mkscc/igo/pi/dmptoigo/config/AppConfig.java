@@ -140,7 +140,7 @@ public class AppConfig {
     @Configuration
     @Profile("prod")
     @PropertySource({
-            "file:src/main/resources/connection-external.properties"
+            "file:connection-external.properties"
     })
     static class ProdPropertyConfig {
     }
@@ -148,7 +148,7 @@ public class AppConfig {
     @Configuration
     @Profile("dev")
     @PropertySource({
-            "file:src/main/resources/connection-external-dev.properties"
+            "file:connection-external-dev.properties"
     })
     static class DevPropertyConfig {
     }
