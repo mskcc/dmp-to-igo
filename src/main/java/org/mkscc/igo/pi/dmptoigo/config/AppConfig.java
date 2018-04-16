@@ -3,9 +3,12 @@ package org.mkscc.igo.pi.dmptoigo.config;
 import org.mkscc.igo.pi.dmptoigo.dmp.converter.BamPathRepository;
 import org.mkscc.igo.pi.dmptoigo.dmp.converter.InMemoryBamPathRepository;
 import org.mskcc.util.notificator.Notificator;
+import org.mskcc.util.notificator.SlackNotificator;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.*;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.client.ClientHttpRequestInterceptor;
 import org.springframework.http.client.ClientHttpResponse;
@@ -112,44 +115,13 @@ public class AppConfig {
                 interceptors));
     }
 
-    /*@Bean
-    public Notificator notificator() {
-        return new SlackNotificator(webhookUrl, channel, user, icon);
-    }*/
-
     @Bean
     public Notificator notificator() {
-        return new Notificator() {
-            @Override
-            public void notifyMessage(String s, String s1) throws Exception {
-
-            }
-
-            @Override
-            public String getMessageSeparator() {
-                return "";
-            }
-        };
+        return new SlackNotificator(webhookUrl, channel, user, icon);
     }
 
     @Bean
     public BamPathRepository bamPathRepository() {
         return new InMemoryBamPathRepository(dmpBamMappingFilePath, notificator());
-    }
-
-    @Configuration
-    @Profile("prod")
-    @PropertySource({
-            "file:connection-external.properties"
-    })
-    static class ProdPropertyConfig {
-    }
-
-    @Configuration
-    @Profile("dev")
-    @PropertySource({
-            "file:connection-external-dev.properties"
-    })
-    static class DevPropertyConfig {
     }
 }

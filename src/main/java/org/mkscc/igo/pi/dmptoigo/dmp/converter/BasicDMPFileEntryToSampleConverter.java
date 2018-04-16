@@ -8,7 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 @Component
-public class BasicDMPFileEntryToSampleConverter extends DmpFileEntryToSampleConverter {
+public class BasicDMPFileEntryToSampleConverter extends BamAwareDmpFileEntryToSampleConverter {
     private static final Logger LOGGER = LogManager.getLogger(BasicDMPFileEntryToSampleConverter.class);
 
     @Autowired

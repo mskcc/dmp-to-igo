@@ -16,7 +16,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 @Component
-public class CachingDMPFileEntryToSampleConverter extends DmpFileEntryToSampleConverter {
+public class CachingDMPFileEntryToSampleConverter extends BamAwareDmpFileEntryToSampleConverter {
     private static final Logger LOGGER = LogManager.getLogger(CachingDMPFileEntryToSampleConverter.class);
 
     private DmpPatientId2CMOPatientIdRepository dmpPatientId2CMOPatientIdRepository;

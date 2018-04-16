@@ -5,11 +5,12 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mkscc.igo.pi.dmptoigo.cmo.repository.ExternalSampleRepository;
 import org.mkscc.igo.pi.dmptoigo.dmp.DMPSampleToExternalSampleConverter;
+import org.mkscc.igo.pi.dmptoigo.dmp.converter.DMPFileEntriesRetriever;
+import org.mkscc.igo.pi.dmptoigo.dmp.converter.DMPFileEntryToSampleConverterFactory;
 import org.mkscc.igo.pi.dmptoigo.dmp.converter.DMPSamplesGateway;
-import org.mkscc.igo.pi.dmptoigo.dmp.converter.DMPSamplesRetriever;
+import org.mkscc.igo.pi.dmptoigo.dmp.converter.DmpFileEntryToSampleConverter;
 import org.mkscc.igo.pi.dmptoigo.dmp.domain.DMPSample;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
+import org.mkscc.igo.pi.dmptoigo.dmp.domain.DmpFileEntry;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.mskcc.domain.external.ExternalSample;
 import org.mskcc.util.notificator.Notificator;
@@ -21,6 +22,7 @@ import java.util.List;
 import java.util.Objects;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -29,16 +31,12 @@ public class DmpToIgoTest {
     private static ExternalSample externalSample0 = getExternalSample0();
     private static ExternalSample externalSample1 = getExternalSample1();
     private static ExternalSample externalSample2 = getExternalSample2();
-
-    @InjectMocks
+    private final DMPFileEntryToSampleConverterFactory dmpFileEntryToSampleConverterFactory = mock
+            (DMPFileEntryToSampleConverterFactory.class);
     private DMPSamplesGateway dmpSamplesGateway;
-
-    @Mock
-    private DMPSamplesRetriever<DMPSample> dmpSampleDMPSamplesRetriever;
-
     private ExternalSampleRepositorySpy externalSampleRepositorySpy;
-
-    private DMPSampleToExternalSampleConverter dmpSampleToExternalSampleConverter = getConverter();
+    private DMPFileEntriesRetriever dmpFileEntriesRetriever = mock(DMPFileEntriesRetriever.class);
+    private Notificator notificator = mock(Notificator.class);
 
     private static ExternalSample getExternalSample0() {
         return new ExternalSample(0, "ext0", "extPat0", "file0.path", "run0", "sampClass0", "sampOrig0", "Tumor");
@@ -54,11 +52,11 @@ public class DmpToIgoTest {
 
     public DMPSampleToExternalSampleConverter getConverter() {
         return dmpSample -> {
-            if (Objects.equals(dmpSample.getDmpId(), "dmpId0"))
+            if (Objects.equals(dmpSample.getDmpId(), "P-1234567-T01-0"))
                 return externalSample0;
-            if (Objects.equals(dmpSample.getDmpId(), "dmpId1"))
+            if (Objects.equals(dmpSample.getDmpId(), "P-1234567-T01-1"))
                 return externalSample1;
-            if (Objects.equals(dmpSample.getDmpId(), "dmpId2"))
+            if (Objects.equals(dmpSample.getDmpId(), "P-1234567-T01-2"))
                 return externalSample2;
 
             throw new RuntimeException(String.format("No DMP Sample %s found", dmpSample));
@@ -68,18 +66,17 @@ public class DmpToIgoTest {
     @Before
     public void setUp() throws Exception {
         externalSampleRepositorySpy = new ExternalSampleRepositorySpy();
-        dmpSamplesGateway = new DMPSamplesGateway(
-                dmpSampleToExternalSampleConverter,
-                dmpSampleDMPSamplesRetriever,
-                externalSampleRepositorySpy,
-                mock(Notificator.class));
+        when(dmpFileEntryToSampleConverterFactory.getConverter(any())).thenReturn(new
+                DummyDMPSampleToSampleConverter());
+        dmpSamplesGateway = new DMPSamplesGateway(dmpFileEntriesRetriever, getConverter(),
+                dmpFileEntryToSampleConverterFactory, externalSampleRepositorySpy, notificator);
     }
 
     @Test
     public void whenThreeSamplesAreRetrieved_shouldSaveThreeSamples() throws Exception {
         //given
         int numberOfSamples = 3;
-        when(dmpSampleDMPSamplesRetriever.retrieve()).thenReturn(getDmpSamples(numberOfSamples));
+        when(dmpFileEntriesRetriever.retrieve()).thenReturn(getDmpFileEntries(numberOfSamples));
 
         //when
         dmpSamplesGateway.invoke();
@@ -88,16 +85,16 @@ public class DmpToIgoTest {
         assertThat(externalSampleRepositorySpy.getSavedSamples().size()).isEqualTo(numberOfSamples);
     }
 
-    private List<DMPSample> getDmpSamples(int numberOfSamples) {
-        List<DMPSample> dmpSamples = new ArrayList<>();
+    private List<DmpFileEntry> getDmpFileEntries(int numberOfSamples) {
+        List<DmpFileEntry> dmpFileEntries = new ArrayList<>();
 
         for (int i = 0; i < numberOfSamples; i++) {
-            DMPSample dmpSample = new DMPSample();
-            dmpSample.setDmpId("dmpId" + i);
-            dmpSamples.add(dmpSample);
+            DmpFileEntry dmpFileEntry = new DmpFileEntry();
+            dmpFileEntry.setDmpSampleId("P-1234567-T01-" + i);
+            dmpFileEntries.add(dmpFileEntry);
         }
 
-        return dmpSamples;
+        return dmpFileEntries;
     }
 
     @Configuration
@@ -124,6 +121,15 @@ public class DmpToIgoTest {
 
         public List<ExternalSample> getSavedSamples() {
             return savedSamples;
+        }
+    }
+
+    private class DummyDMPSampleToSampleConverter implements DmpFileEntryToSampleConverter {
+        @Override
+        public DMPSample convert(DmpFileEntry dmpFileEntry) {
+            DMPSample dmpSample = new DMPSample();
+            dmpSample.setDmpId(dmpFileEntry.getDmpSampleId());
+            return dmpSample;
         }
     }
 }

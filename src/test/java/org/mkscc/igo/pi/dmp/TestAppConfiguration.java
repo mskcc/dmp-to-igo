@@ -4,14 +4,11 @@ import org.mkscc.igo.pi.dmptoigo.cmo.CMOSampleIdResolver;
 import org.mkscc.igo.pi.dmptoigo.config.AppConfig;
 import org.mkscc.igo.pi.dmptoigo.dmp.DmpPatientId2CMOPatientIdRepository;
 import org.mkscc.igo.pi.dmptoigo.dmp.converter.BamPathRetriever;
-import org.mkscc.igo.pi.dmptoigo.dmp.converter.DMPSamplesRetriever;
-import org.mkscc.igo.pi.dmptoigo.dmp.domain.DMPSample;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 
-import java.util.Collections;
 import java.util.Objects;
 
 import static org.mockito.Mockito.mock;
@@ -40,11 +37,6 @@ public class TestAppConfiguration {
                 return cmoId2;
             return "";
         };
-    }
-
-    @Bean
-    public DMPSamplesRetriever<DMPSample> dmpSamplesRetriever() {
-        return Collections::emptyList;
     }
 
     @Bean
