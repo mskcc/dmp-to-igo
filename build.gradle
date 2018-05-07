@@ -33,7 +33,7 @@ configurations {
 }
 
 dependencies {
-    compile group: 'org.mskcc.common', name:'common-domain', version: '2.4.0-SNAPSHOT'
+    compile group: 'org.mskcc.common', name:'common-domain', version: '2.4.0'
     compile group: 'com.opencsv', name: 'opencsv', version: '4.1'
 
     compile ('javax.servlet:javax.servlet-api')
