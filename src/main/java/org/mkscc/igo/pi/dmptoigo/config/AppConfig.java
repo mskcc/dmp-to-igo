@@ -62,8 +62,6 @@ public class AppConfig {
     @Value("${slack.icon}")
     private String icon;
 
-    @Value("${dmp.bam.mapping.file.path}")
-    private String dmpBamMappingFilePath;
 
     @Bean
     @Qualifier("limsRest")

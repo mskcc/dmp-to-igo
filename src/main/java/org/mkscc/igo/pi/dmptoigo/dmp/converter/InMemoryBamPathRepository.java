@@ -5,6 +5,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.mkscc.igo.pi.dmptoigo.dmp.domain.BamInfo;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
@@ -20,12 +21,13 @@ public class InMemoryBamPathRepository implements BamPathRepository {
     private static final Logger LOGGER = LogManager.getLogger(InMemoryBamPathRepository.class);
     private final UniqueBamInfosResolver uniqueBamInfosResolver;
     private Map<String, String> bamIdToBamPath = new HashMap<>();
-    private String bamMappingFilePath;
+
+    @Value("${dmp.bam.mapping.file.path}")
+    private String dmpBamMappingFilePath;
 
     @Autowired
-    public InMemoryBamPathRepository(UniqueBamInfosResolver uniqueBamInfosResolver, String bamMappingFilePath) {
+    public InMemoryBamPathRepository(UniqueBamInfosResolver uniqueBamInfosResolver) {
         this.uniqueBamInfosResolver = uniqueBamInfosResolver;
-        this.bamMappingFilePath = bamMappingFilePath;
     }
 
     @Override
@@ -33,9 +35,9 @@ public class InMemoryBamPathRepository implements BamPathRepository {
     public void loadMappings() {
         try {
             LOGGER.info(String.format("Loading anonymized bam ids to bam path mappings from file: %s",
-                    bamMappingFilePath));
+                    dmpBamMappingFilePath));
             List<BamInfo> bamInfos = new ArrayList<>(new CsvToBeanBuilder<BamInfo>(new FileReader
-                    (bamMappingFilePath))
+                    (dmpBamMappingFilePath))
                     .withType(BamInfo.class)
                     .build()
                     .parse()
@@ -43,7 +45,8 @@ public class InMemoryBamPathRepository implements BamPathRepository {
 
             bamIdToBamPath = uniqueBamInfosResolver.resolve(bamInfos);
         } catch (FileNotFoundException e) {
-            throw new RuntimeException(String.format("File with BAM path mapping not found: %s", bamMappingFilePath));
+            throw new RuntimeException(String.format("File with BAM path mapping not found: %s",
+                    dmpBamMappingFilePath));
         }
     }
 
