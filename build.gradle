@@ -4,6 +4,7 @@ version '1.0-SNAPSHOT'
 apply plugin: 'java'
 apply plugin: 'application'
 apply plugin: 'idea'
+apply plugin: 'maven'
 apply plugin: 'org.springframework.boot'
 
 mainClassName = "org.mkscc.igo.pi.dmptoigo.Application"
@@ -26,14 +27,20 @@ buildscript {
 repositories {
     mavenCentral()
     mavenLocal()
+    maven { url "${nexusUrlReleases}" }
+    maven { url "${nexusUrlSnapshots}" }
 }
 
 configurations {
     all*.exclude module : 'spring-boot-starter-logging'
 }
 
+configurations.all {
+    resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+}
+
 dependencies {
-    compile group: 'org.mskcc.common', name:'common-domain', version: '2.4.0-SNAPSHOT'
+    compile group: 'org.mskcc.common', name:'common-domain', version: '2.4.0'
     compile group: 'com.opencsv', name: 'opencsv', version: '4.1'
 
     compile ('javax.servlet:javax.servlet-api')
@@ -46,16 +53,15 @@ dependencies {
         exclude group: 'org.springframework.boot', module: 'spring-boot-starter-logging'
     }
 
-    compile ('org.springframework.boot:spring-boot-starter-log4j2') 
-    
+    compile ('org.springframework.boot:spring-boot-starter-log4j2')
+
+    compile group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5'
+
     testCompile ('org.springframework.boot:spring-boot-starter-test')
     testCompile 'org.assertj:assertj-core:3.9.0'
 }
 
 bootRun {
-    // @TODO remove after tests
-    System.setProperty("spring.profiles.active", "dev")
-
     if (System.getProperty('DEBUG', 'false') == 'true') {
         jvmArgs '-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005'
     }
@@ -103,4 +109,19 @@ task integrationTest(type: Test) {
     description = "Integration Tests"
     outputs.upToDateWhen { false }
     environment SPRING_PROFILES_ACTIVE: environment.SPRING_PROFILES_ACTIVE ?: "dev"
+}
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            repository(
+                    url: "${nexusUrlReleases}") {
+                authentication(userName: nexusUsername, password: nexusPassword)
+            }
+            snapshotRepository(
+                    url: "${nexusUrlSnapshots}") {
+                authentication(userName: nexusUsername, password: nexusPassword)
+            }
+        }
+    }
 }
