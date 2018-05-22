@@ -19,12 +19,14 @@ import static org.mockito.Mockito.mock;
 public class TestAppConfiguration {
     public static final String externalId1 = "P-123456-FHDJDS";
     public static final String externalId2 = "P-789789-AAABBB";
+    public static final String CACHED_DMP_PATIENT_ID = "P-123456";
+    public static final String CACHED_CMO_PATIENT_ID = "C-987654";
     public static String cmoId1 = "C-123456-N001-dZ";
     public static String cmoId2 = "C-444666-X003-rZ";
 
     public static DmpPatientId2CMOPatientIdRepository getPatientRepository() {
         DmpPatientId2CMOPatientIdRepository repository = new DmpPatientId2CMOPatientIdRepository();
-        repository.put("P-123456", "C-987654");
+        repository.put(CACHED_DMP_PATIENT_ID, CACHED_CMO_PATIENT_ID);
 
         return repository;
     }

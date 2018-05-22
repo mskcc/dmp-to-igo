@@ -2,20 +2,27 @@ package org.mkscc.igo.pi.dmptoigo.dmp;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.mkscc.igo.pi.dmp.TestAppConfiguration;
+import org.mkscc.igo.pi.dmptoigo.cmo.CMOPatientInfoRetriever;
 import org.mkscc.igo.pi.dmptoigo.cmo.CMOSampleIdResolver;
 import org.mkscc.igo.pi.dmptoigo.dmp.domain.DMPSample;
 import org.mkscc.igo.pi.dmptoigo.dmp.domain.DMPSampleIdView;
 import org.mkscc.igo.pi.dmptoigo.dmp.domain.DMPTumorNormal;
 import org.mkscc.igo.pi.dmptoigo.dmp.domain.SampleType;
 import org.mskcc.domain.external.ExternalSample;
+import org.mskcc.domain.patient.CRDBPatientInfo;
 import org.mskcc.domain.patient.Sex;
 import org.mskcc.domain.sample.SampleClass;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 import static org.mkscc.igo.pi.dmp.TestAppConfiguration.*;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class DMPSampleToExternalSampleConverterTest {
+    private static final String NOT_CACHED_CMO_PATIENT_ID = "notCachedDmpId";
     private DMPSampleToExternalSampleConverter dmpSampleToExternalSampleConverter;
     private DmpPatientId2CMOPatientIdRepository patientRepository;
     private String runId = "JAX_1234";
@@ -24,12 +31,17 @@ public class DMPSampleToExternalSampleConverterTest {
     private int counter = 1;
     private CMOSampleIdResolver cmoSampleIdResolver = getCMOSampleIdResolver();
     private String patientDmpId = "P-111222";
+    private CMOPatientInfoRetriever cmoPatientInfoRetriever = mock(CMOPatientInfoRetriever.class);
 
     @Before
     public void setUp() {
         patientRepository = getPatientRepository();
+        CRDBPatientInfo crdbPatientInfo = new CRDBPatientInfo();
+        crdbPatientInfo.setPatientId(NOT_CACHED_CMO_PATIENT_ID);
+        when(cmoPatientInfoRetriever.resolve(any())).thenReturn(crdbPatientInfo);
+
         dmpSampleToExternalSampleConverter = new SimpleDMPSampleToExternalSampleConverter(cmoSampleIdResolver,
-                patientRepository, new DMPGenderToIgoSexConverter());
+                patientRepository, new DMPGenderToIgoSexConverter(), cmoPatientInfoRetriever);
     }
 
     @Test
@@ -43,7 +55,7 @@ public class DMPSampleToExternalSampleConverterTest {
         dmpSample.setGender(DMPSample.Gender.FEMALE);
 
         DMPSampleIdView dmpSampleIdView = new DMPSampleIdView();
-        dmpSampleIdView.setPatientId(patientDmpId);
+        dmpSampleIdView.setPatientId(CACHED_DMP_PATIENT_ID);
         dmpSampleIdView.setTumorNormal(DMPTumorNormal.TUMOR.getDmpValue());
         dmpSampleIdView.setCounter(counter);
 
@@ -59,8 +71,7 @@ public class DMPSampleToExternalSampleConverterTest {
         assertThat(externalSample.getFilePath(), is(dmpSample.getBamPath()));
         assertThat(externalSample.getNucleidAcid(), is(SimpleDMPSampleToExternalSampleConverter.DefaultValues
                 .DEFAULT_NUCLEID_ACID.getValue()));
-        assertThat(externalSample.getPatientCmoId(), is(patientRepository
-                .getCMOPatientIdByDMPPatientId(patientDmpId)));
+        assertThat(externalSample.getPatientCmoId(), is(TestAppConfiguration.CACHED_CMO_PATIENT_ID));
         assertThat(externalSample.getExternalRunId(), is(runId));
         assertThat(externalSample.getSampleClass(), is(sampleType.getSampleClass().getValue()));
         assertThat(externalSample.getSampleOrigin(), is(SimpleDMPSampleToExternalSampleConverter.DefaultValues
@@ -82,7 +93,7 @@ public class DMPSampleToExternalSampleConverterTest {
         dmpSample.setGender(DMPSample.Gender.MALE);
 
         DMPSampleIdView dmpSampleIdView = new DMPSampleIdView();
-        dmpSampleIdView.setPatientId(patientDmpId);
+        dmpSampleIdView.setPatientId(TestAppConfiguration.CACHED_DMP_PATIENT_ID);
         dmpSampleIdView.setTumorNormal(DMPTumorNormal.NORMAL.getDmpValue());
         dmpSampleIdView.setCounter(counter);
 
@@ -98,8 +109,45 @@ public class DMPSampleToExternalSampleConverterTest {
         assertThat(externalSample.getFilePath(), is(dmpSample.getBamPath()));
         assertThat(externalSample.getNucleidAcid(), is(SimpleDMPSampleToExternalSampleConverter.DefaultValues
                 .DEFAULT_NUCLEID_ACID.getValue()));
-        assertThat(externalSample.getPatientCmoId(), is(patientRepository
-                .getCMOPatientIdByDMPPatientId(patientDmpId)));
+        assertThat(externalSample.getPatientCmoId(), is(TestAppConfiguration.CACHED_CMO_PATIENT_ID));
+        assertThat(externalSample.getExternalRunId(), is(runId));
+        assertThat(externalSample.getSampleClass(), is(SampleClass.NORMAL.getValue()));
+        assertThat(externalSample.getSampleOrigin(), is(SimpleDMPSampleToExternalSampleConverter.DefaultValues
+                .DEFAULT_NORMAL_SAMPLE_ORIGIN.getValue()));
+        assertThat(externalSample.getSpecimenType(), is(SimpleDMPSampleToExternalSampleConverter.DefaultValues
+                .DEFAULT_NORMAL_SPECIMEN_TYPE.getValue()));
+        assertThat(externalSample.getTumorNormal(), is(DMPTumorNormal.NORMAL.getIgoValue().getValue()));
+        assertThat(externalSample.getSex(), is(Sex.M.toString()));
+    }
+
+    @Test
+    public void whenPatientIdIsNotInRepository_shouldRetrieveCMOPatientIdFromService() {
+        //given
+        DMPSample dmpSample = new DMPSample();
+        dmpSample.setAnnonymizedRunID(runId);
+        dmpSample.setDmpId(externalId2);
+        dmpSample.setBamPath(bamPath);
+        dmpSample.setSampleType(sampleType.getValue());
+        dmpSample.setGender(DMPSample.Gender.MALE);
+
+        DMPSampleIdView dmpSampleIdView = new DMPSampleIdView();
+        dmpSampleIdView.setPatientId("notCachedDmpPatientId");
+        dmpSampleIdView.setTumorNormal(DMPTumorNormal.NORMAL.getDmpValue());
+        dmpSampleIdView.setCounter(counter);
+
+        dmpSample.setDmpSampleIdView(dmpSampleIdView);
+
+        //when
+        ExternalSample externalSample = dmpSampleToExternalSampleConverter.convert(dmpSample);
+
+        //then
+        assertThat(externalSample.getCounter(), is(dmpSample.getCounter()));
+        assertThat(externalSample.getExternalId(), is(dmpSample.getDmpId()));
+        assertThat(externalSample.getCmoId(), is(cmoId2));
+        assertThat(externalSample.getFilePath(), is(dmpSample.getBamPath()));
+        assertThat(externalSample.getNucleidAcid(), is(SimpleDMPSampleToExternalSampleConverter.DefaultValues
+                .DEFAULT_NUCLEID_ACID.getValue()));
+        assertThat(externalSample.getPatientCmoId(), is(NOT_CACHED_CMO_PATIENT_ID));
         assertThat(externalSample.getExternalRunId(), is(runId));
         assertThat(externalSample.getSampleClass(), is(SampleClass.NORMAL.getValue()));
         assertThat(externalSample.getSampleOrigin(), is(SimpleDMPSampleToExternalSampleConverter.DefaultValues
