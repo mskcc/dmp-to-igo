@@ -1,6 +1,7 @@
 package org.mkscc.igo.pi.dmptoigo.dmp.converter;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.mkscc.igo.pi.dmptoigo.dmp.domain.BamInfo;
 import org.mskcc.util.notificator.Notificator;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,7 +15,7 @@ import java.util.stream.Collectors;
 
 @Component
 public class UniqueBamInfosResolver {
-    private static final Logger LOGGER = Logger.getLogger(UniqueBamInfosResolver.class);
+    private static final Logger LOGGER = LogManager.getLogger(UniqueBamInfosResolver.class);
     private final Notificator notificator;
 
     @Autowired

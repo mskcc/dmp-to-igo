@@ -21,6 +21,8 @@ public class Application {
 
     @Bean
     public CommandLineRunner commandLineRunner(ApplicationContext context) {
+        LOGGER.info("Running DMP to IGO samples");
+
         try {
             DMPSamplesGateway dmpSamplesGateway = context.getBean(DMPSamplesGateway.class);
             return args -> dmpSamplesGateway.invoke();

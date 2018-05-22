@@ -6,7 +6,8 @@ import org.mskcc.domain.patient.CRDBPatientInfo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
@@ -26,11 +27,12 @@ public class RestCMOPatientInfoRetriever implements CMOPatientInfoRetriever {
 
     @Override
     public CRDBPatientInfo resolve(String mrn) {
-        HttpEntity<CRDBPatientInfo> crdbPatientInfoEntity = restTemplate.getForEntity(getUrl(mrn), CRDBPatientInfo
+        ResponseEntity<CRDBPatientInfo> crdbPatientInfoEntity = restTemplate.getForEntity(getUrl(mrn), CRDBPatientInfo
                 .class);
 
-        //@TODO catch errors
-
+        if (crdbPatientInfoEntity.getStatusCode() != HttpStatus.OK)
+            throw new RuntimeException(String.format("Unable to retrieve cmo patient id from service: %s. Cause: %s",
+                    cmoPatientServiceUrl, crdbPatientInfoEntity.getBody()));
         return crdbPatientInfoEntity.getBody();
     }
 

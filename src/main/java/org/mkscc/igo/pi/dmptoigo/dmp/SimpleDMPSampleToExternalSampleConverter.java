@@ -3,12 +3,14 @@ package org.mkscc.igo.pi.dmptoigo.dmp;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.mkscc.igo.pi.dmptoigo.cmo.CMOPatientInfoRetriever;
 import org.mkscc.igo.pi.dmptoigo.cmo.CMOSampleIdResolver;
 import org.mkscc.igo.pi.dmptoigo.dmp.domain.DMPSample;
 import org.mkscc.igo.pi.dmptoigo.dmp.domain.DMPTumorNormal;
 import org.mkscc.igo.pi.dmptoigo.dmp.domain.SampleType;
 import org.mskcc.domain.Recipe;
 import org.mskcc.domain.external.ExternalSample;
+import org.mskcc.domain.patient.CRDBPatientInfo;
 import org.mskcc.domain.sample.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -20,15 +22,18 @@ public class SimpleDMPSampleToExternalSampleConverter implements DMPSampleToExte
     private final CMOSampleIdResolver cmoSampleIdResolver;
     private final DmpPatientId2CMOPatientIdRepository dmpPatientId2CMOPatientIdRepository;
     private DMPGenderToIgoSexConverter dmpGenderToIgoSexConverter;
+    private CMOPatientInfoRetriever cmoPatientIdRetriever;
 
     @Autowired
     public SimpleDMPSampleToExternalSampleConverter(
             CMOSampleIdResolver cmoSampleIdResolver,
             DmpPatientId2CMOPatientIdRepository dmpPatientId2CMOPatientIdRepository,
-            DMPGenderToIgoSexConverter dmpGenderToIgoSexConverter) {
+            DMPGenderToIgoSexConverter dmpGenderToIgoSexConverter,
+            CMOPatientInfoRetriever cmoPatientIdRetriever) {
         this.cmoSampleIdResolver = cmoSampleIdResolver;
         this.dmpPatientId2CMOPatientIdRepository = dmpPatientId2CMOPatientIdRepository;
         this.dmpGenderToIgoSexConverter = dmpGenderToIgoSexConverter;
+        this.cmoPatientIdRetriever = cmoPatientIdRetriever;
     }
 
     @Override
@@ -110,7 +115,16 @@ public class SimpleDMPSampleToExternalSampleConverter implements DMPSampleToExte
     }
 
     private String getCmoPatientId(String dmpPatientId) {
-        return dmpPatientId2CMOPatientIdRepository.getCMOPatientIdByDMPPatientId(dmpPatientId);
+        if(dmpPatientId2CMOPatientIdRepository.containsKey(dmpPatientId)) {
+            String cmoPatientId = dmpPatientId2CMOPatientIdRepository.getCMOPatientIdByDMPPatientId
+                    (dmpPatientId);
+            LOGGER.info(String.format("CMO Patient id %s found in cache for DMP id: %s", cmoPatientId, dmpPatientId));
+            return cmoPatientId;
+        }
+
+        CRDBPatientInfo crdbPatientInfo = cmoPatientIdRetriever.resolve(dmpPatientId);
+
+        return crdbPatientInfo.getPatientId();
     }
 
     private TumorNormalType getTumorNormal(String tumorNormal) {
