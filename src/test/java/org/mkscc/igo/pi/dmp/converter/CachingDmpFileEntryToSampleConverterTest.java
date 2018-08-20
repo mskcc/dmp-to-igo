@@ -1,5 +1,6 @@
 package org.mkscc.igo.pi.dmp.converter;
 
+import org.assertj.core.api.Assertions;
 import org.hamcrest.object.IsCompatibleType;
 import org.junit.Before;
 import org.junit.Test;
@@ -9,6 +10,7 @@ import org.mkscc.igo.pi.dmptoigo.cmo.CMOSampleIdResolver;
 import org.mkscc.igo.pi.dmptoigo.dmp.DmpPatient;
 import org.mkscc.igo.pi.dmptoigo.dmp.DmpPatientId2CMOPatientIdRepository;
 import org.mkscc.igo.pi.dmptoigo.dmp.DmpSamplesRetriever;
+import org.mkscc.igo.pi.dmptoigo.dmp.converter.BamAwareDmpFileEntryToSampleConverter;
 import org.mkscc.igo.pi.dmptoigo.dmp.converter.BamPathRetriever;
 import org.mkscc.igo.pi.dmptoigo.dmp.converter.CachingDMPFileEntryToSampleConverter;
 import org.mkscc.igo.pi.dmptoigo.dmp.domain.DMPSample;
@@ -24,6 +26,7 @@ import org.mskcc.util.TestUtils;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Predicate;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
@@ -47,6 +50,9 @@ public class CachingDmpFileEntryToSampleConverterTest {
 
     @Mock
     private BamPathRetriever bamPathRetriever;
+
+    @Mock
+    private Predicate<String> fileExistsPredicate;
 
     @InjectMocks
     private CachingDMPFileEntryToSampleConverter cachingDMPFileEntryToSampleConverter;
@@ -84,6 +90,7 @@ public class CachingDmpFileEntryToSampleConverterTest {
     public void whenDmpFileEntryIsConverted_shouldDmpSampleHaveFieldsFilledIn() throws Exception {
         //given
         when(dmpSamplesRetriever.retrieve(any())).thenReturn(getDmpPatientWithSamples(correctDmpPatientId, mrn));
+        when(fileExistsPredicate.test(any())).thenReturn(true);
 
         SampleType sampleType = SampleType.METASTATIC;
         DmpFileEntry dmpFileEntry = getDmpFileEntry(sampleType);
@@ -98,6 +105,22 @@ public class CachingDmpFileEntryToSampleConverterTest {
         assertThat(dmpSample.getRunID(), is(runId));
         assertThat(dmpSample.getPatientDmpId(), is(correctDmpPatientId));
         assertThat(dmpSample.getGender(), is(MALE_GENDER));
+    }
+
+    @Test
+    public void whenBamPathDoesntExist_shouldThrowException() throws Exception {
+        //given
+        when(dmpSamplesRetriever.retrieve(any())).thenReturn(getDmpPatientWithSamples(correctDmpPatientId, mrn));
+        when(fileExistsPredicate.test(any())).thenReturn(false);
+
+        SampleType sampleType = SampleType.METASTATIC;
+        DmpFileEntry dmpFileEntry = getDmpFileEntry(sampleType);
+
+        //when
+        //then
+        Assertions
+                .assertThatThrownBy(() -> cachingDMPFileEntryToSampleConverter.convert(dmpFileEntry))
+                .isInstanceOf(BamAwareDmpFileEntryToSampleConverter.BamPathDoesntExistException.class);
     }
 
     private DmpFileEntry getDmpFileEntry(SampleType sampleType) {

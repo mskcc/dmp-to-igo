@@ -7,13 +7,17 @@ import org.mkscc.igo.pi.dmptoigo.dmp.domain.DmpFileEntry;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.util.function.Predicate;
+
 @Component
 public class BasicDMPFileEntryToSampleConverter extends BamAwareDmpFileEntryToSampleConverter {
     private static final Logger LOGGER = LogManager.getLogger(BasicDMPFileEntryToSampleConverter.class);
 
     @Autowired
-    public BasicDMPFileEntryToSampleConverter(BamPathRetriever bamPathRetriever) {
-        super(bamPathRetriever);
+    public BasicDMPFileEntryToSampleConverter(
+            BamPathRetriever bamPathRetriever,
+            Predicate<String> fileExistsPredicate) {
+        super(bamPathRetriever, fileExistsPredicate);
     }
 
     @Override

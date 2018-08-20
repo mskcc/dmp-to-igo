@@ -10,10 +10,12 @@ import org.mkscc.igo.pi.dmptoigo.dmp.domain.DMPSample;
 import org.mkscc.igo.pi.dmptoigo.dmp.domain.DmpFileEntry;
 import org.mskcc.domain.patient.CRDBPatientInfo;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Predicate;
 
 @Component
 public class CachingDMPFileEntryToSampleConverter extends BamAwareDmpFileEntryToSampleConverter {
@@ -24,13 +26,13 @@ public class CachingDMPFileEntryToSampleConverter extends BamAwareDmpFileEntryTo
     private CMOPatientInfoRetriever cmoPatientIdRetriever;
 
     @Autowired
-    public CachingDMPFileEntryToSampleConverter(DmpPatientId2CMOPatientIdRepository
-                                                            dmpPatientId2CMOPatientIdRepository,
+    public CachingDMPFileEntryToSampleConverter(DmpPatientId2CMOPatientIdRepository dmpPatientId2CMOPatientIdRepository,
                                                 DmpSamplesRetriever dmpSamplesRetriever,
                                                 CMOPatientInfoRetriever cmoPatientIdRetriever,
-                                                BamPathRetriever bamPathRetriever) {
-
-        super(bamPathRetriever);
+                                                BamPathRetriever bamPathRetriever,
+                                                @Qualifier("fileExistsPredicate") Predicate<String>
+                                                            fileExistsPredicate) {
+        super(bamPathRetriever, fileExistsPredicate);
         this.dmpPatientId2CMOPatientIdRepository = dmpPatientId2CMOPatientIdRepository;
         this.dmpSamplesRetriever = dmpSamplesRetriever;
         this.cmoPatientIdRetriever = cmoPatientIdRetriever;
