@@ -4,6 +4,8 @@ import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.conn.ssl.TrustStrategy;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.mkscc.igo.pi.dmptoigo.dmp.converter.BamPathRetriever;
+import org.mkscc.igo.pi.dmptoigo.dmp.converter.FromParentFolderBamPathRetriever;
 import org.mskcc.util.notificator.Notificator;
 import org.mskcc.util.notificator.SlackNotificator;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -62,6 +64,8 @@ public class AppConfig {
     @Value("${slack.icon}")
     private String icon;
 
+    @Value("${igo.bam.parent.folder}")
+    private String bamParentFolder;
 
     @Bean
     @Qualifier("limsRest")
@@ -70,6 +74,11 @@ public class AppConfig {
         addBasicAuth(restTemplate, limsRestUsername, limsRestPassword);
 
         return restTemplate;
+    }
+
+    @Bean
+    public BamPathRetriever bamPathRetriever() {
+        return new FromParentFolderBamPathRetriever(bamParentFolder);
     }
 
     /**
