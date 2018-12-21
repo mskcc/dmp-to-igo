@@ -1,35 +1,16 @@
 package org.mkscc.igo.pi.dmptoigo;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.mkscc.igo.pi.dmptoigo.dmp.converter.DMPSamplesGateway;
-import org.springframework.boot.CommandLineRunner;
+import org.mkscc.igo.pi.dmptoigo.dmp.DmpToIgoController;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
+import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 
 @SpringBootApplication
-@ComponentScan("org.mkscc.igo.pi")
+//@ComponentScan(basePackages = {"org.mskcc.igo.pi", "org.mskcc.igo.pi.dmptoigo.dmp"})
 public class Application {
-    private static final Logger LOGGER = LogManager.getLogger(Application.class);
-
     public static void main(String[] args) {
         SpringApplication.run(Application.class, args);
-    }
-
-    @Bean
-    public CommandLineRunner commandLineRunner(ApplicationContext context) {
-        LOGGER.info("Running DMP to IGO samples");
-
-        try {
-            DMPSamplesGateway dmpSamplesGateway = context.getBean(DMPSamplesGateway.class);
-            return args -> dmpSamplesGateway.invoke();
-        } catch (Exception e) {
-            LOGGER.error("Error while retrieving dmp samples", e);
-            return args -> {
-            };
-        }
     }
 }

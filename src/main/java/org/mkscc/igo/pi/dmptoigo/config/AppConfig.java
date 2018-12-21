@@ -32,7 +32,7 @@ import java.util.Collections;
 import java.util.List;
 
 @Configuration
-@ComponentScan(basePackages = "org.mskcc.igo.pi")
+@ComponentScan(basePackages = {"org.mskcc.igo.pi", "org.mskcc.igo.pi.dmptoigo.dmp", "org.mkscc.igo.pi.external.rest"})
 public class AppConfig {
     @Value("${external.sample.rest.username}")
     private String externalSampleRestUsername;

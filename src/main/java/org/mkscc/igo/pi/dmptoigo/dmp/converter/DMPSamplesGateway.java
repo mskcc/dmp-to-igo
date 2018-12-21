@@ -87,7 +87,7 @@ public class DMPSamplesGateway {
 
     private void logAndNotifyOfErrors(DMPSample dmpSample, Exception e) {
         String message = String.format("DMP Sample %s couldn't be converted to External Sample and saved", dmpSample);
-        LOGGER.warn(message, e);
+        LOGGER.error(message, e);
 
         String messageWithCause = String.format("%s. Cause: %s", message, e.getMessage());
         tryToNotifyOrErrors(messageWithCause, dmpSample);
@@ -124,7 +124,7 @@ public class DMPSamplesGateway {
         try {
             notificator.notifyMessage("", message);
         } catch (Exception e) {
-            LOGGER.warn(String.format("Unable to send notification about errors in converting dmp sample: %s",
+            LOGGER.error(String.format("Unable to send notification about errors in converting dmp sample: %s",
                     dmpSampleId), e);
         }
     }

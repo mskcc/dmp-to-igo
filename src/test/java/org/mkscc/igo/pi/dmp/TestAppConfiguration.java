@@ -43,7 +43,17 @@ public class TestAppConfiguration {
 
     @Bean
     public BamPathRetriever bamPathRetriever() {
-        return annonymizedBamId -> "/some/path/to.bam";
+        return new BamPathRetriever() {
+            @Override
+            public String retrieveBamPath(String annonymizedBamId) {
+                return "/some/path/to.bam";
+            }
+
+            @Override
+            public String retrieveBaiPath(String annonymizedBamId) {
+                return "/some/path/to.bai";
+            }
+        };
     }
 
     @Bean

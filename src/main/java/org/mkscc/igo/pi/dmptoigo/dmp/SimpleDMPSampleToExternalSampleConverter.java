@@ -84,7 +84,7 @@ public class SimpleDMPSampleToExternalSampleConverter implements DMPSampleToExte
         try {
             return dmpGenderToIgoSexConverter.convert(dmpSample.getGender()).toString();
         } catch (Exception e) {
-            LOGGER.warn(String.format("Sex for dmp sample %s could not be retrieved this left empty", dmpSample
+            LOGGER.warn(String.format("Sex for dmp sample %s could not be retrieved thus left empty", dmpSample
                     .getDmpId()));
             return "";
         }
