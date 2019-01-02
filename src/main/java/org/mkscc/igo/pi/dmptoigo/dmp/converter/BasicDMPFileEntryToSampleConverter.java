@@ -4,6 +4,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.mkscc.igo.pi.dmptoigo.dmp.domain.DMPSample;
 import org.mkscc.igo.pi.dmptoigo.dmp.domain.DmpFileEntry;
+import org.mskcc.util.notificator.Notificator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -16,8 +17,9 @@ public class BasicDMPFileEntryToSampleConverter extends BamAwareDmpFileEntryToSa
     @Autowired
     public BasicDMPFileEntryToSampleConverter(
             BamPathRetriever bamPathRetriever,
-            Predicate<String> fileExistsPredicate) {
-        super(bamPathRetriever, fileExistsPredicate);
+            Predicate<String> fileExistsPredicate,
+            Notificator notificator) {
+        super(bamPathRetriever, fileExistsPredicate, notificator);
     }
 
     @Override

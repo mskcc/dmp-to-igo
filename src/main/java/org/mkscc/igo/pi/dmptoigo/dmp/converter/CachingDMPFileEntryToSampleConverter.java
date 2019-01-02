@@ -9,6 +9,7 @@ import org.mkscc.igo.pi.dmptoigo.dmp.DmpSamplesRetriever;
 import org.mkscc.igo.pi.dmptoigo.dmp.domain.DMPSample;
 import org.mkscc.igo.pi.dmptoigo.dmp.domain.DmpFileEntry;
 import org.mskcc.domain.patient.CRDBPatientInfo;
+import org.mskcc.util.notificator.Notificator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
@@ -31,8 +32,9 @@ public class CachingDMPFileEntryToSampleConverter extends BamAwareDmpFileEntryTo
                                                 CMOPatientInfoRetriever cmoPatientIdRetriever,
                                                 BamPathRetriever bamPathRetriever,
                                                 @Qualifier("fileExistsPredicate") Predicate<String>
-                                                            fileExistsPredicate) {
-        super(bamPathRetriever, fileExistsPredicate);
+                                                            fileExistsPredicate,
+                                                Notificator notificator) {
+        super(bamPathRetriever, fileExistsPredicate, notificator);
         this.dmpPatientId2CMOPatientIdRepository = dmpPatientId2CMOPatientIdRepository;
         this.dmpSamplesRetriever = dmpSamplesRetriever;
         this.cmoPatientIdRetriever = cmoPatientIdRetriever;

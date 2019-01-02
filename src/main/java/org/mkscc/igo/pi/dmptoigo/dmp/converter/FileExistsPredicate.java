@@ -16,7 +16,7 @@ public class FileExistsPredicate implements Predicate<String> {
 
     @Override
     public boolean test(String filePath) {
-        LOGGER.info(String.format("Cheking file path: %s for existence", filePath));
+        LOGGER.info(String.format("Checking file path: %s for existence", filePath));
 
         return Files.exists(Paths.get(filePath));
     }

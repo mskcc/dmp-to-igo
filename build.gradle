@@ -2,25 +2,22 @@ group 'org.mkscc.igo.pi'
 version '1.3-SNAPSHOT'
 
 apply plugin: 'java'
-apply plugin: 'application'
 apply plugin: 'idea'
-apply plugin: 'maven'
+//apply plugin: 'application'
+//apply plugin: 'maven'
 apply plugin: 'org.springframework.boot'
-
-mainClassName = "org.mkscc.igo.pi.dmptoigo.Application"
 
 sourceCompatibility = 1.8
 
-ext.springVersion='1.5.9.RELEASE'
-
 buildscript {
-    def springVersion='1.5.9.RELEASE'
-
+    ext {
+        springBootVersion = '1.5.10.RELEASE'
+    }
     repositories {
         mavenCentral()
     }
     dependencies {
-        classpath group: 'org.springframework.boot', name: 'spring-boot-gradle-plugin', version: springVersion
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
     }
 }
 
@@ -67,12 +64,8 @@ bootRun {
     }
 
     systemProperties = System.properties
-
 }
 
-run {
-    systemProperties = System.properties
-}
 
 springBoot {
     executable = true
@@ -111,17 +104,17 @@ task integrationTest(type: Test) {
     environment SPRING_PROFILES_ACTIVE: environment.SPRING_PROFILES_ACTIVE ?: "dev"
 }
 
-uploadArchives {
-    repositories {
-        mavenDeployer {
-            repository(
-                    url: "${nexusUrlReleases}") {
-                authentication(userName: nexusUsername, password: nexusPassword)
-            }
-            snapshotRepository(
-                    url: "${nexusUrlSnapshots}") {
-                authentication(userName: nexusUsername, password: nexusPassword)
-            }
-        }
-    }
-}
+//uploadArchives {
+//    repositories {
+//        mavenDeployer {
+//            repository(
+//                    url: "${nexusUrlReleases}") {
+//                authentication(userName: nexusUsername, password: nexusPassword)
+//            }
+//            snapshotRepository(
+//                    url: "${nexusUrlSnapshots}") {
+//                authentication(userName: nexusUsername, password: nexusPassword)
+//            }
+//        }
+//    }
+//}
