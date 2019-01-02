@@ -6,6 +6,7 @@ import org.mkscc.igo.pi.dmptoigo.dmp.converter.DMPSamplesGateway;
 import org.mskcc.util.notificator.Notificator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.stereotype.Controller;
@@ -23,7 +24,7 @@ public class DmpToIgoController {
         this.notificator = notificator;
     }
 
-    @RequestMapping("/dmp-to-igo")
+    @PostMapping("/dmp-to-igo")
     public String retrieve() {
         LOGGER.info("Running DMP to IGO samples");
 
