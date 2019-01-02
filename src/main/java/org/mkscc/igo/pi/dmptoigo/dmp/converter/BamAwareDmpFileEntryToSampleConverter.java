@@ -62,7 +62,8 @@ public abstract class BamAwareDmpFileEntryToSampleConverter implements DmpFileEn
     private void validateBamPathExists(String bamPath) {
         if (!pathExists(bamPath))
             throw new BamPathDoesntExistException(String.format("%d. Bam path doesn't exist: %s", notFoundCounter++, bamPath));
-        throw new BamPathDoesntExistException(String.format("%d. Bam path exists: %s", foundCounter++, bamPath));
+
+        LOGGER.info(String.format("%d. Bam path exists: %s", foundCounter++, bamPath));
     }
 
     private boolean pathExists(String path) {
