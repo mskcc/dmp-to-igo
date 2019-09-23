@@ -6,6 +6,7 @@ import org.apache.logging.log4j.Logger;
 import org.mkscc.igo.pi.dmptoigo.cmo.CMOPatientInfoRetriever;
 import org.mkscc.igo.pi.dmptoigo.cmo.CMOSampleIdResolver;
 import org.mkscc.igo.pi.dmptoigo.dmp.domain.DMPSample;
+import org.mkscc.igo.pi.dmptoigo.dmp.domain.DMPSampleIdView;
 import org.mkscc.igo.pi.dmptoigo.dmp.domain.DMPTumorNormal;
 import org.mkscc.igo.pi.dmptoigo.dmp.domain.SampleType;
 import org.mskcc.domain.Recipe;
@@ -13,7 +14,10 @@ import org.mskcc.domain.external.ExternalSample;
 import org.mskcc.domain.patient.CRDBPatientInfo;
 import org.mskcc.domain.sample.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+
+import java.util.Map;
 
 @Component
 public class SimpleDMPSampleToExternalSampleConverter implements DMPSampleToExternalSampleConverter {
@@ -24,16 +28,22 @@ public class SimpleDMPSampleToExternalSampleConverter implements DMPSampleToExte
     private DMPGenderToIgoSexConverter dmpGenderToIgoSexConverter;
     private CMOPatientInfoRetriever cmoPatientIdRetriever;
 
+    private Map<String, String> dmpAssay2IgoBaitVersion;
+
     @Autowired
     public SimpleDMPSampleToExternalSampleConverter(
             CMOSampleIdResolver cmoSampleIdResolver,
             DmpPatientId2CMOPatientIdRepository dmpPatientId2CMOPatientIdRepository,
             DMPGenderToIgoSexConverter dmpGenderToIgoSexConverter,
-            CMOPatientInfoRetriever cmoPatientIdRetriever) {
+            CMOPatientInfoRetriever cmoPatientIdRetriever,
+            @Value("#{${dmp.assay.2.igo.bait.version}}") Map<String, String> dmpAssay2IgoBaitVersion) {
         this.cmoSampleIdResolver = cmoSampleIdResolver;
         this.dmpPatientId2CMOPatientIdRepository = dmpPatientId2CMOPatientIdRepository;
         this.dmpGenderToIgoSexConverter = dmpGenderToIgoSexConverter;
         this.cmoPatientIdRetriever = cmoPatientIdRetriever;
+        this.dmpAssay2IgoBaitVersion = dmpAssay2IgoBaitVersion;
+
+        LOGGER.debug("Loaded DMP assay to Bait version mapping: " + dmpAssay2IgoBaitVersion);
     }
 
     @Override
@@ -56,7 +66,7 @@ public class SimpleDMPSampleToExternalSampleConverter implements DMPSampleToExte
         externalSample.setPatientCmoId(getCmoPatientId(dmpSample.getPatientDmpId()));
         externalSample.setSpecimenType(getSpecimenType(dmpSample));
         externalSample.setCmoId(cmoSampleIdResolver.resolve(externalSample));
-        externalSample.setBaitVersion(DefaultValues.DEFAULT_BAIT_VERSION.getValue());
+        externalSample.setBaitVersion(getBaitVersion(dmpSample.getDmpSampleIdView()));
         externalSample.setSex(getSex(dmpSample));
         externalSample.setOncotreeCode(dmpSample.getOncotreeCode());
         externalSample.setTissueSite(getTissueSite(dmpSample));
@@ -66,6 +76,14 @@ public class SimpleDMPSampleToExternalSampleConverter implements DMPSampleToExte
                 externalSample));
 
         return externalSample;
+    }
+
+    public String getBaitVersion(DMPSampleIdView view) {
+        String assay = view.getAssay();
+        String baitVersion = dmpAssay2IgoBaitVersion.getOrDefault(assay, "");
+        LOGGER.debug(String.format("Mapping for assay %s found '%s'", assay, baitVersion));
+
+        return baitVersion;
     }
 
     private String getTissueSite(DMPSample dmpSample) {
@@ -115,7 +133,7 @@ public class SimpleDMPSampleToExternalSampleConverter implements DMPSampleToExte
     }
 
     private String getCmoPatientId(String dmpPatientId) {
-        if(dmpPatientId2CMOPatientIdRepository.containsKey(dmpPatientId)) {
+        if (dmpPatientId2CMOPatientIdRepository.containsKey(dmpPatientId)) {
             String cmoPatientId = dmpPatientId2CMOPatientIdRepository.getCMOPatientIdByDMPPatientId
                     (dmpPatientId);
             LOGGER.info(String.format("CMO Patient id %s found in cache for DMP id: %s", cmoPatientId, dmpPatientId));

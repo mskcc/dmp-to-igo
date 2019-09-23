@@ -14,6 +14,9 @@ import org.mskcc.domain.patient.CRDBPatientInfo;
 import org.mskcc.domain.patient.Sex;
 import org.mskcc.domain.sample.SampleClass;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 import static org.mkscc.igo.pi.dmp.TestAppConfiguration.*;
@@ -40,8 +43,10 @@ public class DMPSampleToExternalSampleConverterTest {
         crdbPatientInfo.setPatientId(NOT_CACHED_CMO_PATIENT_ID);
         when(cmoPatientInfoRetriever.resolve(any())).thenReturn(crdbPatientInfo);
 
+        Map<String, String> dmpAssay2IgoBaitVersion = new HashMap<>();
+        dmpAssay2IgoBaitVersion.put("IM6", "IMPACT468");
         dmpSampleToExternalSampleConverter = new SimpleDMPSampleToExternalSampleConverter(cmoSampleIdResolver,
-                patientRepository, new DMPGenderToIgoSexConverter(), cmoPatientInfoRetriever);
+                patientRepository, new DMPGenderToIgoSexConverter(), cmoPatientInfoRetriever, dmpAssay2IgoBaitVersion);
     }
 
     @Test

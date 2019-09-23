@@ -8,11 +8,15 @@ import org.mskcc.domain.external.ExternalSample;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
+
+import java.util.List;
 
 @Component
 public class ServiceExternalSampleRepository implements ExternalSampleRepository {
@@ -40,6 +44,20 @@ public class ServiceExternalSampleRepository implements ExternalSampleRepository
                 .getExternalId());
 
         return sampleExists;
+    }
+
+    @Override
+    public List<ExternalSample> getAll() {
+        String url = String.format("%s/%s", externalSampleRestUrl, samplesEndpoint);
+
+        ResponseEntity<List<ExternalSample>> externalSampleResponse = restTemplate.exchange(
+                url,
+                HttpMethod.GET,
+                null,
+                new ParameterizedTypeReference<List<ExternalSample>>() {
+                });
+
+        return externalSampleResponse.getBody();
     }
 
     @Override

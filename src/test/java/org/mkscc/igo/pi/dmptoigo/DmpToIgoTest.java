@@ -82,7 +82,7 @@ public class DmpToIgoTest {
         dmpSamplesGateway.invoke();
 
         //then
-        assertThat(externalSampleRepositorySpy.getSavedSamples().size()).isEqualTo(numberOfSamples);
+        assertThat(externalSampleRepositorySpy.getAll().size()).isEqualTo(numberOfSamples);
     }
 
     private List<DmpFileEntry> getDmpFileEntries(int numberOfSamples) {
@@ -119,7 +119,8 @@ public class DmpToIgoTest {
             savedSamples.add(externalSample);
         }
 
-        public List<ExternalSample> getSavedSamples() {
+        @Override
+        public List<ExternalSample> getAll() {
             return savedSamples;
         }
     }

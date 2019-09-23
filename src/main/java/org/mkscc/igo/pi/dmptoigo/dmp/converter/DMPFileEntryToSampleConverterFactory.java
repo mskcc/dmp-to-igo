@@ -46,7 +46,7 @@ public class DMPFileEntryToSampleConverterFactory {
         boolean containsPatient = dmpPatientId2CMOPatientIdRepository.containsKey(dmpFileEntry.getPatientId());
 
         if (!containsPatient)
-            LOGGER.info(String.format("No mapping for patient dmp id: %s found in cache. Value will be retreived",
+            LOGGER.info(String.format("No mapping for patient dmp id: %s found in cache. Value will be retrieved",
                     dmpFileEntry.getPatientId()));
 
         return containsPatient;
