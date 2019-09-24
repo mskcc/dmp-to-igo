@@ -1,5 +1,6 @@
 package org.mkscc.igo.pi.dmptoigo.dmp;
 
+import org.assertj.core.api.Assertions;
 import org.junit.Before;
 import org.junit.Test;
 import org.mkscc.igo.pi.dmp.TestAppConfiguration;
@@ -126,7 +127,7 @@ public class DMPSampleToExternalSampleConverterTest {
     }
 
     @Test
-    public void whenPatientIdIsNotInRepository_shouldRetrieveCMOPatientIdFromService() {
+    public void whenPatientIdIsNotInRepository_shouldThrowException() {
         //given
         DMPSample dmpSample = new DMPSample();
         dmpSample.setAnnonymizedRunID(runId);
@@ -143,23 +144,8 @@ public class DMPSampleToExternalSampleConverterTest {
         dmpSample.setDmpSampleIdView(dmpSampleIdView);
 
         //when
-        ExternalSample externalSample = dmpSampleToExternalSampleConverter.convert(dmpSample);
-
-        //then
-        assertThat(externalSample.getCounter(), is(dmpSample.getCounter()));
-        assertThat(externalSample.getExternalId(), is(dmpSample.getDmpId()));
-        assertThat(externalSample.getCmoId(), is(cmoId2));
-        assertThat(externalSample.getFilePath(), is(dmpSample.getBamPath()));
-        assertThat(externalSample.getNucleidAcid(), is(SimpleDMPSampleToExternalSampleConverter.DefaultValues
-                .DEFAULT_NUCLEID_ACID.getValue()));
-        assertThat(externalSample.getPatientCmoId(), is(NOT_CACHED_CMO_PATIENT_ID));
-        assertThat(externalSample.getExternalRunId(), is(runId));
-        assertThat(externalSample.getSampleClass(), is(SampleClass.NORMAL.getValue()));
-        assertThat(externalSample.getSampleOrigin(), is(SimpleDMPSampleToExternalSampleConverter.DefaultValues
-                .DEFAULT_NORMAL_SAMPLE_ORIGIN.getValue()));
-        assertThat(externalSample.getSpecimenType(), is(SimpleDMPSampleToExternalSampleConverter.DefaultValues
-                .DEFAULT_NORMAL_SPECIMEN_TYPE.getValue()));
-        assertThat(externalSample.getTumorNormal(), is(DMPTumorNormal.NORMAL.getIgoValue().getValue()));
-        assertThat(externalSample.getSex(), is(Sex.M.toString()));
+        Assertions.assertThatThrownBy(() -> dmpSampleToExternalSampleConverter.convert(dmpSample))
+                .isInstanceOf(NoDMPToCMOPatientIdMapping.class)
+                .hasMessageContaining("notCachedDmpPatientId");
     }
 }
