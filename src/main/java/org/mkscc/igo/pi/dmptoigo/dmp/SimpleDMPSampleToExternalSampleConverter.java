@@ -11,7 +11,6 @@ import org.mkscc.igo.pi.dmptoigo.dmp.domain.DMPTumorNormal;
 import org.mkscc.igo.pi.dmptoigo.dmp.domain.SampleType;
 import org.mskcc.domain.Recipe;
 import org.mskcc.domain.external.ExternalSample;
-import org.mskcc.domain.patient.CRDBPatientInfo;
 import org.mskcc.domain.sample.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -140,9 +139,7 @@ public class SimpleDMPSampleToExternalSampleConverter implements DMPSampleToExte
             return cmoPatientId;
         }
 
-        CRDBPatientInfo crdbPatientInfo = cmoPatientIdRetriever.resolve(dmpPatientId);
-
-        return crdbPatientInfo.getPatientId();
+        throw new NoDMPToCMOPatientIdMapping("No mapping in cache for DMP patient id " + dmpPatientId);
     }
 
     private TumorNormalType getTumorNormal(String tumorNormal) {

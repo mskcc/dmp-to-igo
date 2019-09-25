@@ -4,6 +4,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.mkscc.igo.pi.dmptoigo.cmo.repository.ExternalSampleRepository;
 import org.mkscc.igo.pi.dmptoigo.dmp.DMPSampleToExternalSampleConverter;
+import org.mkscc.igo.pi.dmptoigo.dmp.NoDMPToCMOPatientIdMapping;
 import org.mkscc.igo.pi.dmptoigo.dmp.domain.DMPSample;
 import org.mkscc.igo.pi.dmptoigo.dmp.domain.DMPSampleIdView;
 import org.mkscc.igo.pi.dmptoigo.dmp.domain.DmpFileEntry;
@@ -13,9 +14,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.io.FileNotFoundException;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @Component
 public class DMPSamplesGateway {
@@ -27,6 +31,7 @@ public class DMPSamplesGateway {
     private DMPFileEntryToSampleConverterFactory dmpFileEntryToSampleConverterFactory;
     private ExternalSampleRepository externalSampleRepository;
     private Notificator notificator;
+    private Queue<DMPSample> samplesToProcess = new LinkedList<>();
 
     @Autowired
     public DMPSamplesGateway(DMPFileEntriesRetriever dmpFileEntriesRetriever,
@@ -51,7 +56,6 @@ public class DMPSamplesGateway {
 
     private void saveDMPSamples() throws FileNotFoundException {
         List<DmpFileEntry> dmpFileEntries = getDmpFileEntries();
-
         for (DmpFileEntry dmpFileEntry : dmpFileEntries) {
             String dmpId = dmpFileEntry.getDmpSampleId();
 
@@ -60,6 +64,17 @@ public class DMPSamplesGateway {
                 saveDMPSample(dmpFileEntry, dmpId);
             } else {
                 LOGGER.info(String.format("Sample with id %s already exists. It will be skipped.", dmpId));
+            }
+        }
+
+        if (samplesToProcess.size() > 0) {
+            LOGGER.info(String.format("Saving samples with previously missing CMO Patient ids: %s", samplesToProcess
+                    .stream()
+                    .map(DMPSample::getDmpId).collect(Collectors.joining(","))));
+
+            DMPSample toProcess;
+            while ((toProcess = samplesToProcess.poll()) != null) {
+                tryToSave(toProcess);
             }
         }
     }
@@ -79,7 +94,13 @@ public class DMPSamplesGateway {
             LOGGER.info(String.format("Saving dmp sample: %s", dmpSample));
 
             ExternalSample externalSample = convert(dmpSample);
+            LOGGER.info(String.format("Converted external sample: %s", externalSample));
             externalSampleRepository.save(externalSample);
+        } catch (NoDMPToCMOPatientIdMapping e) {
+            samplesToProcess.add(dmpSample);
+
+            LOGGER.warn(String.format("DMP Sample %s couldn't be converted because of missing CMO patient id mapping." +
+                    " It will be rerun after all samples are processed.", dmpSample.getDmpId()));
         } catch (Exception e) {
             logAndNotifyOfErrors(dmpSample, e);
         }
