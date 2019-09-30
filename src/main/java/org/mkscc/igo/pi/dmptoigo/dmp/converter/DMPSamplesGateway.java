@@ -67,15 +67,24 @@ public class DMPSamplesGateway {
             }
         }
 
+        processSamplesWithMissingPatientId();
+    }
+
+    private void processSamplesWithMissingPatientId() {
         if (samplesToProcess.size() > 0) {
             LOGGER.info(String.format("Saving samples with previously missing CMO Patient ids: %s", samplesToProcess
                     .stream()
                     .map(DMPSample::getDmpId).collect(Collectors.joining(","))));
 
-            DMPSample toProcess;
-            while ((toProcess = samplesToProcess.poll()) != null) {
-                tryToSave(toProcess);
+            for (DMPSample toProcess : samplesToProcess) {
+                try {
+                    convertAndSave(toProcess);
+                } catch (Exception e) {
+                    logAndNotifyOfErrors(toProcess, e);
+                }
             }
+
+            samplesToProcess.clear();
         }
     }
 
@@ -91,19 +100,20 @@ public class DMPSamplesGateway {
 
     private void tryToSave(DMPSample dmpSample) {
         try {
-            LOGGER.info(String.format("Saving dmp sample: %s", dmpSample));
-
-            ExternalSample externalSample = convert(dmpSample);
-            LOGGER.info(String.format("Converted external sample: %s", externalSample));
-            externalSampleRepository.save(externalSample);
+            convertAndSave(dmpSample);
         } catch (NoDMPToCMOPatientIdMapping e) {
             samplesToProcess.add(dmpSample);
 
             LOGGER.warn(String.format("DMP Sample %s couldn't be converted because of missing CMO patient id mapping." +
                     " It will be rerun after all samples are processed.", dmpSample.getDmpId()));
-        } catch (Exception e) {
-            logAndNotifyOfErrors(dmpSample, e);
         }
+    }
+
+    private void convertAndSave(DMPSample dmpSample) {
+        LOGGER.info(String.format("Converting dmp sample: %s", dmpSample));
+
+        ExternalSample externalSample = convert(dmpSample);
+        externalSampleRepository.save(externalSample);
     }
 
     private void logAndNotifyOfErrors(DMPSample dmpSample, Exception e) {
